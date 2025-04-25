@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cuentoskilla
+    username: postgres
+    password: 993753
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
