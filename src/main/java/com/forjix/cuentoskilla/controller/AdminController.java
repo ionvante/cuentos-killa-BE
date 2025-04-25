@@ -11,6 +11,7 @@ public class AdminController {
     @GetMapping("/pedidos")
     @PreAuthorize("hasRole('ADMIN')")
     public String getPedidosAdmin() {
+        System.out.println("getPedidosAdmin() ejecutado");
         return "Listado de pedidos para el administrador";
     }
 
