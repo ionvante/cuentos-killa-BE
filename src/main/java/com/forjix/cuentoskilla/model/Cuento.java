@@ -85,6 +85,21 @@ public class Cuento {
     private LocalDate fechaIngreso;
     private String edadRecomendada;
     private int stock;
+    private double precio;
+    private String imagenUrl;
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+    public double getPrecio() {
+        return precio;
+    }
+    public void setPrecio(double precio) {
+        this.precio = precio;
+    }
 
     // Getters y setters
 }
