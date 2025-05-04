@@ -17,6 +17,11 @@ public class Order {
     @ManyToOne
     private User user;
 
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items;
+
+    // Getters y setters
     public Long getId() {
         return id;
     }
@@ -55,10 +60,5 @@ public class Order {
 
     public void setItems(List<OrderItem> items) {
         this.items = items;
-    }
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> items;
-
-    // Getters y setters
+    }    
 }

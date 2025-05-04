@@ -1,6 +1,8 @@
 package com.forjix.cuentoskilla.model;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,6 +22,9 @@ public class User {
     private String documento; // DNI o RUC
 
     private String role;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Direccion> direcciones = new ArrayList<>();
 
     public Long getId() {
         return id;

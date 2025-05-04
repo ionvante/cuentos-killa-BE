@@ -3,19 +3,25 @@ package com.forjix.cuentoskilla.model;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "order_item")
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
+    @JoinColumn(name = "cuento_id")
     private Cuento cuento;
 
     @ManyToOne
+    @JoinColumn(name = "order_id")
     private Order order;
 
     private int cantidad;
     private double precioUnitario;
+   
+
+    // Getters y setters
     public Long getId() {
         return id;
     }
@@ -45,7 +51,5 @@ public class OrderItem {
     }
     public void setPrecioUnitario(double precioUnitario) {
         this.precioUnitario = precioUnitario;
-    }
-
-    // Getters y setters
+    }    
 }
