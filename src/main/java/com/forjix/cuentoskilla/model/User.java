@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 @Table(name = "usuarios")
 public class User {
@@ -24,6 +26,7 @@ public class User {
     private String role;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Direccion> direcciones = new ArrayList<>();
 
     public Long getId() {

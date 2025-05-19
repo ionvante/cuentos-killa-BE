@@ -5,6 +5,7 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 
+import org.apache.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,13 +36,17 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody PedidoDTO pedidoDTO) {
-                try {
+        try {
             Order savedOrder = service.save(pedidoDTO);
-            return ResponseEntity.ok(savedOrder);
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.ok(Map.of("id", savedOrder.getId()));
+            // } catch (RuntimeException ex) {
+            // return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            // } catch (Exception ex) {
+            // return ResponseEntity.internalServerError().body(Map.of("error", "Error
+            // inesperado"));
+            // }
         } catch (Exception ex) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error inesperado"));
+            return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).body("Error al registrar pedido: " + ex.getMessage());
         }
     }
 

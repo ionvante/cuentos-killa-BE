@@ -11,7 +11,11 @@ public class PedidoDTO {
     private double total;
     private String estado;
 
-      // Getters y setters
+    private Long userId;
+
+    private String correoUsuario;
+
+    // Getters y setters
     public String getNombre() {
         return nombre;
     }
@@ -55,5 +59,17 @@ public class PedidoDTO {
         this.estado = estado;
     }
 
-  
+    public Long getUserId() {
+        return userId;
+    }
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }  
+
+    public String getCorreoUsuario() {
+        return correoUsuario;
+    }
+    public void setCorreoUsuario(String correoUsuario) {
+        this.correoUsuario = correoUsuario;
+    }    
 }

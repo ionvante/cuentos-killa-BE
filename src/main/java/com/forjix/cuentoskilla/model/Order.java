@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -15,10 +18,12 @@ public class Order {
     private String estado; // Generado, Pagado, etc.
 
     @ManyToOne
+    @JsonIgnore // <-- importante si el ciclo proviene de aquí
     private User user;
 
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<OrderItem> items;
 
     // Getters y setters
