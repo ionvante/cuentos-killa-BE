@@ -26,6 +26,10 @@ public class Order {
     @JsonManagedReference
     private List<OrderItem> items;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Voucher> vouchers;
+
     // Getters y setters
     public Long getId() {
         return id;
@@ -65,5 +69,13 @@ public class Order {
 
     public void setItems(List<OrderItem> items) {
         this.items = items;
-    }    
+    }
+
+    public List<Voucher> getVouchers() {
+        return vouchers;
+    }
+
+    public void setVouchers(List<Voucher> vouchers) {
+        this.vouchers = vouchers;
+    }
 }
