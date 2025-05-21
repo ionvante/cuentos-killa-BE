@@ -35,6 +35,10 @@ public class OrderService {
         return orderRepo.findByUser(user);
     }
 
+     public Order getOrder(Long id) {
+        return orderRepo.findById(id).orElse(null);
+    }
+
     public Order save(PedidoDTO pedidoDTO) {
         Order order = new Order();
         order.setEstado(pedidoDTO.getEstado());
