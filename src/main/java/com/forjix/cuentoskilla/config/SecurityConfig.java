@@ -30,7 +30,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
-                .requestMatchers("/api/orders/**").permitAll()  // 🔓 Público
+                .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
