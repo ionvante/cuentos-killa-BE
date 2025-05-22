@@ -10,3 +10,11 @@ spring:
 
 file:
   upload-dir: ./uploads/vouchers
+
+mercadopago:
+  access-token: YOUR_ACCESS_TOKEN # Existing
+  back-urls:
+    success: https://your-frontend.com/payment/success
+    failure: https://your-frontend.com/payment/failure
+    pending: https://your-frontend.com/payment/pending
+  notification-url: https://your-api-backend.com/api/webhooks/mercadopago
