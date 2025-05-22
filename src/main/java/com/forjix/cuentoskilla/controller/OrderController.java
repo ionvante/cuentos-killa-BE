@@ -5,18 +5,23 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
-import com.forjix.cuentoskilla.service.storage.StorageException; // Added
+import com.forjix.cuentoskilla.service.MercadoPagoService; // Added
+import com.forjix.cuentoskilla.service.storage.StorageException;
 import com.forjix.cuentoskilla.model.Voucher;
-import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger; // Added
-import org.slf4j.LoggerFactory; // Added
+import com.mercadopago.resources.preference.Preference; // Added
+import com.mercadopago.exceptions.MPException; // Added
+import com.mercadopago.exceptions.MPApiException; // Added
 
-import org.apache.http.HttpStatus;
-import org.checkerframework.common.reflection.qual.GetMethod;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+// import org.apache.http.HttpStatus; // Replaced by Spring's HttpStatus
+import org.springframework.http.HttpStatus; // Added
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestParam; // Added
-import org.springframework.web.multipart.MultipartFile; // Added
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,13 +37,15 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
 public class OrderController {
-    private static final Logger logger = LoggerFactory.getLogger(OrderController.class); // Added
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private final OrderService service;
     private final StorageService storageService;
+    private final MercadoPagoService mercadoPagoService; // Added
 
-    public OrderController(OrderService service, StorageService storageService) {
+    public OrderController(OrderService service, StorageService storageService, MercadoPagoService mercadoPagoService) { // Modified
         this.service = service;
         this.storageService = storageService;
+        this.mercadoPagoService = mercadoPagoService; // Added
     }
 
     @GetMapping
@@ -57,7 +64,46 @@ public class OrderController {
             Order savedOrder = service.save(pedidoDTO);
             return ResponseEntity.ok(Map.of("id", savedOrder.getId()));
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).body("Error al registrar pedido: " + ex.getMessage());
+            // Using Spring's HttpStatus here
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Error al registrar pedido: " + ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/mercadopago/create-preference") // New Endpoint
+    public ResponseEntity<?> createPaymentPreference(@RequestBody PedidoDTO pedidoDTO) {
+        Order savedOrder;
+        try {
+            logger.info("Saving order before creating Mercado Pago preference for user: {}", pedidoDTO.getCorreoUsuario());
+            savedOrder = service.save(pedidoDTO);
+            logger.info("Order saved with ID: {}. Attempting to create Mercado Pago preference.", savedOrder.getId());
+        } catch (Exception e) {
+            logger.error("Error saving order before creating Mercado Pago preference: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(Map.of("error", "Error saving order: " + e.getMessage()));
+        }
+
+        try {
+            Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId());
+            if (preference != null && preference.getInitPoint() != null) {
+                logger.info("Mercado Pago preference created successfully for order ID: {}. Init point: {}", savedOrder.getId(), preference.getInitPoint());
+                return ResponseEntity.ok(Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()));
+            } else {
+                logger.error("Mercado Pago preference or init point was null for order ID: {}", savedOrder.getId());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                     .body(Map.of("error", "Failed to retrieve Mercado Pago init point."));
+            }
+        } catch (MPApiException e) {
+            logger.error("MPApiException while creating Mercado Pago preference for order ID {}: {} - Response: {}", savedOrder.getId(), e.getMessage(), e.getApiResponse() != null ? e.getApiResponse().getContent() : "N/A", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(Map.of("error", "Error with Mercado Pago API: " + e.getMessage()));
+        } catch (MPException e) {
+            logger.error("MPException while creating Mercado Pago preference for order ID {}: {}", savedOrder.getId(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(Map.of("error", "Error with Mercado Pago SDK: " + e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error creating Mercado Pago preference for order ID {}: {}", savedOrder.getId(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(Map.of("error", "Unexpected error creating preference: " + e.getMessage()));
         }
     }
 
@@ -105,7 +151,7 @@ public class OrderController {
             ));
         } catch (StorageException e) {
             logger.error("StorageException for orderId {}: {}", orderId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.SC_BAD_REQUEST) // Or INTERNAL_SERVER_ERROR depending on StorageException type
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST) // Using Spring's HttpStatus
                              .body(Map.of("error", "Storage error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             logger.error("IllegalArgumentException for orderId {}: {}", orderId, e.getMessage(), e);
@@ -113,7 +159,7 @@ public class OrderController {
         } 
         catch (Exception e) {
             logger.error("Unexpected error during voucher upload for orderId {}: {}", orderId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR) // Using Spring's HttpStatus
                              .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
