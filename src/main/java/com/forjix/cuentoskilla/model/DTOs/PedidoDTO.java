@@ -10,6 +10,7 @@ public class PedidoDTO {
     private List<PedidoItemDTO> items;
     private double total;
     private String estado;
+    private String tipoDePago;
 
     private Long userId;
 
@@ -71,5 +72,13 @@ public class PedidoDTO {
     }
     public void setCorreoUsuario(String correoUsuario) {
         this.correoUsuario = correoUsuario;
-    }    
+    }   
+    
+    public String getTipoDePago() {
+        return tipoDePago;
+    }
+
+    public void setTipoDePago(String tipoDePago) {
+        this.tipoDePago = tipoDePago;
+    }
 }

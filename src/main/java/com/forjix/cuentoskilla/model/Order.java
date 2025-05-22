@@ -16,6 +16,7 @@ public class Order {
 
     private LocalDateTime fecha;
     private String estado; // Generado, Pagado, etc.
+    private String tipoDePago;
 
     @ManyToOne
     @JsonIgnore // <-- importante si el ciclo proviene de aquí
@@ -77,5 +78,13 @@ public class Order {
 
     public void setVouchers(List<Voucher> vouchers) {
         this.vouchers = vouchers;
+    }
+
+    public String getTipoDePago() {
+        return tipoDePago;
+    }
+
+    public void setTipoDePago(String tipoDePago) {
+        this.tipoDePago = tipoDePago;
     }
 }

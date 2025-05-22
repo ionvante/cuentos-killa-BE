@@ -43,6 +43,7 @@ public class OrderService {
         Order order = new Order();
         order.setEstado(pedidoDTO.getEstado());
         order.setFecha(LocalDateTime.now());
+        order.setTipoDePago(pedidoDTO.getTipoDePago());
 
         if (pedidoDTO.getUserId() != null) {
             // Usuario autenticado
