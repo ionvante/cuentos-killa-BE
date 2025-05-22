@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cuentoskilla
+    username: postgres
+    password: 993753
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+file:
+  upload-dir: ./uploads/vouchers
+
+mercadopago:
+  access-token: YOUR_ACCESS_TOKEN # Existing
+  back-urls:
+    success: https://your-frontend.com/payment/success
+    failure: https://your-frontend.com/payment/failure
+    pending: https://your-frontend.com/payment/pending
+  notification-url: https://your-api-backend.com/api/webhooks/mercadopago
