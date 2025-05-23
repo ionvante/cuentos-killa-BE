@@ -1,8 +1,12 @@
 package com.forjix.cuentoskilla.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
+import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -11,11 +15,18 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Table(name = "orders")
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
-    private LocalDateTime fecha;
-    private String estado; // Generado, Pagado, etc.
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus estado; // Generado, Pagado, etc.
+
+    private BigDecimal total;
 
     @ManyToOne
     @JsonIgnore // <-- importante si el ciclo proviene de aquí
@@ -31,28 +42,36 @@ public class Order {
     private List<Voucher> vouchers;
 
     // Getters y setters
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public LocalDateTime getFecha() {
-        return fecha;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public String getEstado() {
+    public OrderStatus getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(OrderStatus estado) {
         this.estado = estado;
+    }
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public void setTotal(BigDecimal total) {
+        this.total = total;
     }
 
     public User getUser() {
