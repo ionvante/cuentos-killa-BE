@@ -1,9 +1,10 @@
 package com.forjix.cuentoskilla.model;
 
 import jakarta.persistence.*;
-
+import org.hibernate.annotations.GenericGenerator; // Added
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID; // Added
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -11,8 +12,10 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Table(name = "usuarios")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID") // Added
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // Added
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID") // Added
+    private UUID id; // Changed from Long to UUID
 
     private String uid; // Firebase UID, si aplica
     private String email;
@@ -29,11 +32,11 @@ public class User {
     @JsonManagedReference
     private List<Direccion> direcciones = new ArrayList<>();
 
-    public Long getId() {
+    public UUID getId() { // Changed return type to UUID
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) { // Changed parameter type to UUID
         this.id = id;
     }
 
