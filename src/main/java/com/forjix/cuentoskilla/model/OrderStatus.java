@@ -1,7 +1,11 @@
 package com.forjix.cuentoskilla.model;
 
 public enum OrderStatus {
-    PENDIENTE,
+    GENERADO,
+    PAGO_PENDIENTE,
     PAGADO,
-    CANCELADO
+    VERIFICADO,
+    EMPAQUETADO,
+    ENVIADO,
+    ENTREGADO
 }

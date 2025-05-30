@@ -59,7 +59,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<Order> getOrdersByUser(UUID userId) {
+    public List<Order> getOrdersByUser(long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         List<Order> orders = orderRepo.findByUser(user);
@@ -68,7 +68,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Order getOrderByIdAndUser(UUID orderId, UUID userId) {
+    public Order getOrderByIdAndUser(Long orderId, Long userId) {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
         if (!order.getUser().getId().equals(userId)) {
@@ -84,7 +84,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(authenticatedUser); // Set the authenticated user
         order.setCreatedAt(LocalDateTime.now());
-        order.setEstado(OrderStatus.PENDIENTE); // New orders are PENDIENTE
+        order.setEstado(OrderStatus.PAGO_PENDIENTE); // New orders are PENDIENTE
 
         List<OrderItem> items = pedidoDTO.getItems().stream().map(dto -> {
             Cuento cuento = cuentoRepo.findById(dto.getCuentoId())
@@ -118,10 +118,10 @@ public class OrderService {
 
 
     @Transactional
-    public String initiatePayment(UUID orderId, UUID userId) throws MPException, MPApiException {
+    public String initiatePayment(long orderId, long userId) throws MPException, MPApiException {
         Order order = getOrderByIdAndUser(orderId, userId); // Verifies ownership
 
-        if (order.getEstado() != OrderStatus.PENDIENTE) {
+        if (order.getEstado() != OrderStatus.PAGO_PENDIENTE) {
             throw new IllegalStateException("Order is not in PENDIENTE state, cannot initiate payment.");
         }
 
@@ -196,7 +196,7 @@ public class OrderService {
     }
 
     @Transactional
-    public boolean deleteOrderByIdAndUser(UUID orderId, UUID userId) {
+    public boolean deleteOrderByIdAndUser(Long orderId, Long userId) {
         Order order = orderRepo.findById(orderId)
                 .orElse(null); 
         if (order == null) {

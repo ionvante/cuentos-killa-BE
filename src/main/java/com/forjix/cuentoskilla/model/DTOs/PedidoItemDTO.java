@@ -1,8 +1,25 @@
 package com.forjix.cuentoskilla.model.DTOs;
 
+import java.math.BigDecimal;
+
 public class PedidoItemDTO {
     private Long cuentoId;
     private int cantidad;
+    private String tituloCuento;
+    private BigDecimal precioUnitario;
+
+    public BigDecimal getPrecioUnitario() {
+        return precioUnitario;
+    }
+    public void setPrecioUnitario(BigDecimal precioUnitario) {
+        this.precioUnitario = precioUnitario;
+    }
+    public String getTituloCuento() {
+        return tituloCuento;
+    }
+    public void setTituloCuento(String tituloCuento) {
+        this.tituloCuento = tituloCuento;
+    }
     public Long getCuentoId() {
         return cuentoId;
     }

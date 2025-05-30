@@ -4,6 +4,7 @@ import com.forjix.cuentoskilla.model.*; // Import all from model
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
+import com.forjix.cuentoskilla.service.UserService;
 import com.forjix.cuentoskilla.service.MercadoPagoService; // Added
 import com.forjix.cuentoskilla.service.storage.StorageException;
 import com.forjix.cuentoskilla.model.Voucher;
@@ -32,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID; // Added
 
 @RestController
 @RequestMapping("/api/orders")
@@ -42,11 +42,13 @@ public class OrderController {
     private final OrderService service;
     private final StorageService storageService;
     private final MercadoPagoService mercadoPagoService; // Added
+    private final UserService servUser; // Added
 
-    public OrderController(OrderService service, StorageService storageService, MercadoPagoService mercadoPagoService) { // Modified
+    public OrderController(OrderService service, StorageService storageService, MercadoPagoService mercadoPagoService,UserService servUser) { // Modified
         this.service = service;
         this.storageService = storageService;
         this.mercadoPagoService = mercadoPagoService; // Added
+        this.servUser = servUser; // Added
     }
 
     @GetMapping
@@ -58,7 +60,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -70,7 +72,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/pay")
-    public ResponseEntity<?> initiatePayment(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<?> initiatePayment(@PathVariable long id, @AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -96,7 +98,9 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<?> create(@RequestBody PedidoDTO pedidoDTO) {
         try {
-            Order savedOrder = service.save(pedidoDTO);
+            
+            Order savedOrder = service.save(pedidoDTO,servUser.findById(pedidoDTO.getUserId()).get());
+            logger.info("Order saved with ID: {}", savedOrder.getId());
             return ResponseEntity.ok(Map.of("id", savedOrder.getId()));
         } catch (Exception ex) {
             // Using Spring's HttpStatus here
@@ -153,7 +157,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Void> delete(@PathVariable long id, @AuthenticationPrincipal User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -170,7 +174,7 @@ public class OrderController {
     @PostMapping("/voucher")
     public ResponseEntity<?> uploadVoucher(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("idpedido") UUID orderId, // Changed to UUID
+            @RequestParam("idpedido") long orderId, // Changed to UUID
             @RequestParam(name = "dispositivo", required = false, defaultValue = "Desconocido") String dispositivo,
             HttpServletRequest request, @AuthenticationPrincipal User user) {
         

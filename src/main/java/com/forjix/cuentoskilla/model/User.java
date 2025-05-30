@@ -12,10 +12,11 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Table(name = "usuarios")
 public class User {
     @Id
-    @GeneratedValue(generator = "UUID") // Added
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // Added
-    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID") // Added
-    private UUID id; // Changed from Long to UUID
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @GeneratedValue(generator = "UUID") // Added
+    // @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // Added
+    // @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID") // Added
+    private Long id; // Changed from Long to UUID
 
     private String uid; // Firebase UID, si aplica
     private String email;
@@ -32,11 +33,11 @@ public class User {
     @JsonManagedReference
     private List<Direccion> direcciones = new ArrayList<>();
 
-    public UUID getId() { // Changed return type to UUID
+    public Long getId() { // Changed return type to UUID
         return id;
     }
 
-    public void setId(UUID id) { // Changed parameter type to UUID
+    public void setId(Long id) { // Changed parameter type to UUID
         this.id = id;
     }
 

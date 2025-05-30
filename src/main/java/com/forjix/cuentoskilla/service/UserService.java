@@ -14,8 +14,8 @@ public class UserService {
         this.repo = repo;
     }
 
-    public Optional<User> findByUid(String uid) {
-        return repo.findByUid(uid);
+    public Optional<User> findById(Long id) {
+        return repo.findById(id);
     }
 
     public User save(User user) {

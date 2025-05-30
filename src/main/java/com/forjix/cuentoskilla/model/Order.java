@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
-
-import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -15,10 +12,9 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Table(name = "orders")
 public class Order {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
-    private UUID id;
+    private Long id;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -42,11 +38,11 @@ public class Order {
     private List<Voucher> vouchers;
 
     // Getters y setters
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(long id) {
         this.id = id;
     }
 
