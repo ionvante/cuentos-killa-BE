@@ -1,5 +1,6 @@
 package com.forjix.cuentoskilla.controller;
 
+import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.*; // Import all from model
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
@@ -7,10 +8,11 @@ import com.forjix.cuentoskilla.service.StorageService;
 import com.forjix.cuentoskilla.service.UserService;
 import com.forjix.cuentoskilla.service.MercadoPagoService; // Added
 import com.forjix.cuentoskilla.service.storage.StorageException;
-import com.forjix.cuentoskilla.model.Voucher;
 import com.mercadopago.resources.preference.Preference; // Added
 import com.mercadopago.exceptions.MPException; // Added
 import com.mercadopago.exceptions.MPApiException; // Added
+
+import com.forjix.cuentoskilla.model.Rol;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -51,16 +53,19 @@ public class OrderController {
         this.servUser = servUser; // Added
     }
 
+
     @GetMapping
-    public ResponseEntity<List<Order>> getOrders(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<Order>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        if (servUser.findById(user.getId()).get().getRole().equals(Rol.ADMIN.toString())){
+            return ResponseEntity.ok(service.getOrders(user.getId()));
+        }
         return ResponseEntity.ok(service.getOrdersByUser(user.getId()));
     }
-
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -72,7 +77,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/pay")
-    public ResponseEntity<?> initiatePayment(@PathVariable long id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<?> initiatePayment(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -132,7 +137,7 @@ public class OrderController {
 
         try {
             // Pass user details if needed by mercadoPagoService, or rely on savedOrder's user association
-            Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId(), user); // Potentially pass user
+            Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId()); // Potentially pass user
             if (preference != null && preference.getInitPoint() != null) {
                 logger.info("Mercado Pago preference created successfully for order ID: {}. Init point: {}", savedOrder.getId(), preference.getInitPoint());
                 return ResponseEntity.ok(Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()));
@@ -193,7 +198,7 @@ public class OrderController {
             long fileSize = file.getSize();
 
             // Basic validation for orderId before calling service
-            if (orderId == null) { // UUID can be null
+            if (orderId == 0) { // UUID can be null
                 logger.warn("Null orderId provided by user {}", user.getId());
                 return ResponseEntity.badRequest().body(Map.of("error", "Valid Order ID is required."));
             }
@@ -202,7 +207,7 @@ public class OrderController {
                         orderId, originalFileName, ip, dispositivo, user.getId());
             
             // storageService.store should also verify user ownership of the orderId
-            Voucher voucher = storageService.store(file, orderId, originalFileName, contentType, ip, dispositivo, fileSize, user.getId());
+            Voucher voucher = storageService.store(file, orderId, originalFileName, contentType, ip, dispositivo, fileSize);
             
             logger.info("Voucher uploaded successfully for orderId: {}. Voucher ID: {}, FileName: {} by user {}", 
                         orderId, voucher.getId(), voucher.getNombreArchivo(), user.getId());

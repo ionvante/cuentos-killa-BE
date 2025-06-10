@@ -59,10 +59,19 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<Order> getOrders(long userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+        List<Order> orders = orderRepo.findAll();
+        orders.forEach(this::populateOrderItems);
+        return orders;
+    }
+
+    @Transactional(readOnly = true)
     public List<Order> getOrdersByUser(long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-        List<Order> orders = orderRepo.findByUser(user);
+        List<Order> orders = orderRepo.findByUser_Id(user.getId());
         orders.forEach(this::populateOrderItems);
         return orders;
     }
