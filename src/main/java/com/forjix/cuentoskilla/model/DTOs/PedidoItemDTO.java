@@ -32,4 +32,14 @@ public class PedidoItemDTO {
     public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
     }
+    public PedidoItemDTO(Long cuentoId, int cantidad, String tituloCuento, BigDecimal precioUnitario) {
+        this.cuentoId = cuentoId;
+        this.cantidad = cantidad;
+        this.tituloCuento = tituloCuento;
+        this.precioUnitario = precioUnitario;
+    }
+
+    public PedidoItemDTO() {
+        // Constructor por defecto
+    }
 }

@@ -9,6 +9,7 @@ import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import com.forjix.cuentoskilla.service.MercadoPagoService; // Assuming this service exists for payment
 import com.mercadopago.exceptions.MPException;
+import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.exceptions.MPApiException;
 
 
@@ -199,10 +200,28 @@ public class OrderService {
         // We need to pass a PedidoDTO to MercadoPagoService.createPaymentPreference.
         // Since we have the order, we can reconstruct a PedidoDTO from it.
         PedidoDTO pedidoDTO = new PedidoDTO();
+        pedidoDTO.setEstado(order.getEstado().toString());
+        pedidoDTO.setNombre(order.getUser().getNombre()); // Assuming User has a name field
         pedidoDTO.setCorreoUsuario(order.getUser().getEmail()); // Assuming User has an email field
-        pedidoDTO.setItems(order.getItems().stream()
-            .map(item -> new PedidoItemDTO(item.getCuento().getId(), item.getCantidad(), item.getPrecio_unitario(), item.getNombre()))
-            .collect(Collectors.toList()));
+        for (OrderItem item : order.getItems()) {
+            // Assuming OrderItem has getCuento() that returns Cuento with getId()
+            PedidoItemDTO x = new PedidoItemDTO();
+            x.setCuentoId(item.getCuento().getId());
+            x.setTituloCuento(item.getNombre()); // Assuming OrderItem has getNombre() for title
+            x.setPrecioUnitario(BigDecimal.valueOf(item.getPrecio_unitario())); // Convert double to BigDecimal
+            x.setCantidad(item.getCantidad());
+            pedidoDTO.getItems().add(x); // Add item to the list
+        }
+
+        return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
+
+        // Regarding status update:
+        // Typically, status to PAGADO is done via webhook, not here.
+        // If payment is synchronous and MP returns status immediately, then we could update.
+                item.getNombre(), // Assuming OrderItem has getNombre() for title
+                item.getPrecio_unitario() // Assuming this is double, but can be converted to BigDecimal if needed
+            ));
+        }
 
         return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
 

@@ -24,15 +24,13 @@ public class UserController {
 
     @GetMapping("/pedidos")
     @PreAuthorize("hasRole('USER')")
-    public List<Order> getMisPedidos(@RequestParam String uid) {
-        return userService.findByUid(uid)
-                .map(orderService::getOrders)
-                .orElse(List.of());
+    public List<Order> getMisPedidos(@RequestParam Long uid) {
+        return orderService.getOrders(uid);
     }
 
     @GetMapping("/perfil")
     @PreAuthorize("hasRole('USER')")
-    public User getPerfil(@RequestParam String uid) {
-        return userService.findByUid(uid).orElse(null);
+    public User getPerfil(@RequestParam Long uid) {
+        return userService.findById(uid).orElse(null);
     }
 }
