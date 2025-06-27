@@ -195,7 +195,16 @@ public class OrderService {
         // The client hits `/pay` perhaps to log the attempt or as a gate.
         // This service method should return the init_point, assuming it's retrievable or can be regenerated.
         // For now, let's assume MercadoPagoService can generate/retrieve it using order data.
-        return mercadoPagoService.getOrCreatePaymentPreferenceUrl(order); // This method needs to exist in MercadoPagoService
+        // To fix: The method getOrCreatePaymentPreferenceUrl(Order) is undefined for the type MercadoPagoService
+        // We need to pass a PedidoDTO to MercadoPagoService.createPaymentPreference.
+        // Since we have the order, we can reconstruct a PedidoDTO from it.
+        PedidoDTO pedidoDTO = new PedidoDTO();
+        pedidoDTO.setCorreoUsuario(order.getUser().getEmail()); // Assuming User has an email field
+        pedidoDTO.setItems(order.getItems().stream()
+            .map(item -> new PedidoItemDTO(item.getCuento().getId(), item.getCantidad(), item.getPrecio_unitario(), item.getNombre()))
+            .collect(Collectors.toList()));
+
+        return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
 
         // Regarding status update:
         // Typically, status to PAGADO is done via webhook, not here.
