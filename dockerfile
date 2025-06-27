@@ -22,6 +22,6 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar","--spring.profiles.active=prod"]
-# Health check para verificar que la aplicación está corriendo
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+# # Health check para verificar que la aplicación está corriendo
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=10s \
+#   CMD curl -f http://localhost:8080/actuator/health || exit 1
