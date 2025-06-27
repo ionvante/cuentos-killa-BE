@@ -215,21 +215,7 @@ public class OrderService {
 
         return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
 
-        // Regarding status update:
-        // Typically, status to PAGADO is done via webhook, not here.
-        // If payment is synchronous and MP returns status immediately, then we could update.
-                item.getNombre(), // Assuming OrderItem has getNombre() for title
-                item.getPrecio_unitario() // Assuming this is double, but can be converted to BigDecimal if needed
-            ));
-        }
-
-        return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
-
-        // Regarding status update:
-        // Typically, status to PAGADO is done via webhook, not here.
-        // If payment is synchronous and MP returns status immediately, then we could update.
-        // But MP is usually redirect-based.
-        // So, we will NOT change status to PAGADO here. It remains PENDIENTE.
+    
     }
 
     @Transactional
