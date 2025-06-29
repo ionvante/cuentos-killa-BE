@@ -37,6 +37,7 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("http://localhost:4200").permitAll() // o el puerto que uses
+                .requestMatchers("https://cuentos-killa-fe.vercel.app/").permitAll() // o el puerto que uses
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
                 .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
