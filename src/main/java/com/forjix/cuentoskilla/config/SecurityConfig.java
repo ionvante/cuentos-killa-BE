@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,22 +32,34 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        
         http
-        .cors()
-        .and()
-        .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("http://localhost:4200").permitAll() // o el puerto que uses
-                .requestMatchers("https://cuentos-killa-fe.vercel.app").permitAll() // o el puerto que uses
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
-                .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
-                .requestMatchers("/api/**").authenticated()
-                .anyRequest().permitAll()
-            )
+        // .cors()
+        // .and()
+        // .csrf(csrf -> csrf.disable())
+        //     .authorizeHttpRequests(auth -> auth
+        //         .requestMatchers("http://localhost:4200").permitAll() // o el puerto que uses
+        //         .requestMatchers("https://cuentos-killa-fe.vercel.app").permitAll() // o el puerto que uses
+        //         .requestMatchers("/api/auth/**").permitAll()
+        //         .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
+        //         .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
+        //         .requestMatchers("/api/**").authenticated()
+        //         .anyRequest().permitAll()
+        //     )
+
+         // 1) habilita CORS y deshabilita CSRF (útil para APIs REST)
+          .cors(Customizer.withDefaults())
+          .csrf(csrf -> csrf.disable())
+
+          // 2) configura tus reglas de seguridad
+          .authorizeHttpRequests(auth -> auth
+              .requestMatchers("/auth/**").permitAll()
+              .anyRequest().authenticated()
+          )        
             .addFilterBefore(new JwtAuthFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new FirebaseTokenFilter(), JwtAuthFilter.class);
-            
+
+
 
         return http.build();
     }
@@ -57,7 +70,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of("http://localhost:4200")); // Origen del frontend
         config.setAllowedOrigins(List.of("https://cuentos-killa-fe.vercel.app")); // Origen del frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Si usas cookies/token
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
