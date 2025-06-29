@@ -37,7 +37,7 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("http://localhost:4200").permitAll() // o el puerto que uses
-                .requestMatchers("https://cuentos-killa-fe.vercel.app/").permitAll() // o el puerto que uses
+                .requestMatchers("https://cuentos-killa-fe.vercel.app").permitAll() // o el puerto que uses
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
                 .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
@@ -55,6 +55,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:4200")); // Origen del frontend
+        config.setAllowedOrigins(List.of("https://cuentos-killa-fe.vercel.app")); // Origen del frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true); // Si usas cookies/token
