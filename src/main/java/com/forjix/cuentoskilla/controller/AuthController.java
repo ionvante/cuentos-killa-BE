@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin
 public class AuthController {
 
     private final AuthenticationManager authManager;

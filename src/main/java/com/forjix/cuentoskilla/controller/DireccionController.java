@@ -19,7 +19,7 @@ import com.forjix.cuentoskilla.service.DireccionService;
 
 @RestController
 @RequestMapping("/api/direcciones")
-@CrossOrigin(origins = "*")
+@CrossOrigin
 public class DireccionController {
 
     private final DireccionService service;

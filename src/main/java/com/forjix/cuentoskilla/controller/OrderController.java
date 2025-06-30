@@ -12,8 +12,6 @@ import com.mercadopago.resources.preference.Preference; // Added
 import com.mercadopago.exceptions.MPException; // Added
 import com.mercadopago.exceptions.MPApiException; // Added
 
-import com.forjix.cuentoskilla.model.Rol;
-
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +36,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "*")
+@CrossOrigin
 public class OrderController {
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private final OrderService service;
