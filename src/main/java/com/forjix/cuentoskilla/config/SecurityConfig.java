@@ -53,7 +53,7 @@ public class SecurityConfig {
 
           // 2) configura tus reglas de seguridad
           .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers("/api/auth/**","/auth/**").permitAll()
             .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
             .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
               .anyRequest().authenticated()
