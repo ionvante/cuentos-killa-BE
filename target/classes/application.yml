@@ -1,17 +1,13 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-    hikari:
-      data-source-properties:
-        prepareThreshold: 0       # evita problema con Supabase Pooler    
+    url: jdbc:postgresql://localhost:5432/cuentoskilla
+    username: postgres
+    password: 993753
   jpa:
     hibernate:
-      ddl-auto: validate          # Use 'validate' to ensure schema matches, change to 'update' if needed
+      ddl-auto: update
     show-sql: true
-  main:
-    web-application-type: servlet
+
 file:
   upload-dir: ./uploads/vouchers
 
@@ -22,5 +18,3 @@ mercadopago:
     failure: https://your-frontend.com/payment/failure
     pending: https://your-frontend.com/payment/pending
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
-
-      

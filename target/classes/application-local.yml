@@ -7,8 +7,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-  main:
-    web-application-type: servlet
+
 file:
   upload-dir: ./uploads/vouchers
 

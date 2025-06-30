@@ -54,7 +54,6 @@ public class SecurityConfig {
 
           // 2) configura tus reglas de seguridad
           .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
             .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
@@ -71,10 +70,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // config.setAllowedOrigins(List.of("http://localhost:4200")); // Origen del frontend
-        // config.setAllowedOrigins(List.of("https://cuentos-killa-fe.vercel.app")); // Origen del frontend
-        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app"));
-
+        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Si usas cookies/token

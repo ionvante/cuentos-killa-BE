@@ -1,3 +1,5 @@
 firebase-service-account.json
 src/main/resources/application.yml
+target/classes/application-local.yml
+target/classes/application-prod.yml
 target/classes/application.yml
