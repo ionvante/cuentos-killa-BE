@@ -43,6 +43,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse>  login(@RequestBody Map<String, String> body) {
+        System.out.println("🗝️  Login attempt for email:" + body.get("email") +" - pass:"+ body.get("password") );
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(body.get("email"), body.get("password")));
         UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();

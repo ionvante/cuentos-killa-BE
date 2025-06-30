@@ -53,7 +53,9 @@ public class SecurityConfig {
 
           // 2) configura tus reglas de seguridad
           .authorizeHttpRequests(auth -> auth
-              .requestMatchers("/auth/**").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
+            .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
               .anyRequest().authenticated()
           )        
             .addFilterBefore(new JwtAuthFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)
