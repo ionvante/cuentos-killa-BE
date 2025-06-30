@@ -10,7 +10,8 @@ spring:
     hibernate:
       ddl-auto: validate          # Use 'validate' to ensure schema matches, change to 'update' if needed
     show-sql: true
-
+  main:
+    web-application-type: servlet
 file:
   upload-dir: ./uploads/vouchers
 
