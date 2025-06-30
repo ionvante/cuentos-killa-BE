@@ -87,6 +87,7 @@ public class Cuento {
     private int stock;
     private double precio;
     private String imagenUrl;
+    private boolean habilitado = true;
 
     public String getImagenUrl() {
         return imagenUrl;
@@ -99,6 +100,14 @@ public class Cuento {
     }
     public void setPrecio(double precio) {
         this.precio = precio;
+    }
+
+    public boolean isHabilitado() {
+        return habilitado;
+    }
+
+    public void setHabilitado(boolean habilitado) {
+        this.habilitado = habilitado;
     }
 
     // Getters y setters
