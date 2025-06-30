@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -53,7 +54,8 @@ public class SecurityConfig {
 
           // 2) configura tus reglas de seguridad
           .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**","/auth/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
             .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
               .anyRequest().authenticated()

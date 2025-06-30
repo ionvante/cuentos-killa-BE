@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
 
@@ -51,7 +51,7 @@ public class AuthController {
          // Obtener el usuario completo desde la base de datos
          User user = userRepo.findByEmail(userDetails.getUsername())
         .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
-
+        user.setOrders(null); // Evitar circular references en la serialización
     return ResponseEntity.ok(new LoginResponse(token, user));
 
         

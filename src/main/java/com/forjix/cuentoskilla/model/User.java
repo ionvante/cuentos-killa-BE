@@ -13,9 +13,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @GeneratedValue(generator = "UUID") // Added
-    // @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // Added
-    // @Column(name = "id", updatable = false, nullable = false, columnDefinition = "UUID") // Added
     private Long id; // Changed from Long to UUID
 
     private String uid; // Firebase UID, si aplica

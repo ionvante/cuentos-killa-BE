@@ -7,11 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cuentos")
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class CuentoController {
 
     private final CuentoRepository cuentoRepository;
