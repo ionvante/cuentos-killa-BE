@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 
 public class PedidoItemDTO {
     private Long cuentoId;
-    private int cantidad;
-    private String tituloCuento;
+    private String nombreCuento;
+    private String imagenUrl;
     private BigDecimal precioUnitario;
+    private int cantidad;
+    private BigDecimal subtotal;
 
     public BigDecimal getPrecioUnitario() {
         return precioUnitario;
@@ -14,11 +16,17 @@ public class PedidoItemDTO {
     public void setPrecioUnitario(BigDecimal precioUnitario) {
         this.precioUnitario = precioUnitario;
     }
-    public String getTituloCuento() {
-        return tituloCuento;
+    public String getNombreCuento() {
+        return nombreCuento;
     }
-    public void setTituloCuento(String tituloCuento) {
-        this.tituloCuento = tituloCuento;
+    public void setNombreCuento(String nombreCuento) {
+        this.nombreCuento = nombreCuento;
+    }
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
     }
     public Long getCuentoId() {
         return cuentoId;
@@ -32,11 +40,20 @@ public class PedidoItemDTO {
     public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
     }
-    public PedidoItemDTO(Long cuentoId, int cantidad, String tituloCuento, BigDecimal precioUnitario) {
+    public BigDecimal getSubtotal() {
+        return subtotal;
+    }
+    public void setSubtotal(BigDecimal subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public PedidoItemDTO(Long cuentoId, int cantidad, String nombreCuento, BigDecimal precioUnitario, String imagenUrl, BigDecimal subtotal) {
         this.cuentoId = cuentoId;
-        this.cantidad = cantidad;
-        this.tituloCuento = tituloCuento;
+        this.nombreCuento = nombreCuento;
+        this.imagenUrl = imagenUrl;
         this.precioUnitario = precioUnitario;
+        this.cantidad = cantidad;
+        this.subtotal = subtotal;
     }
 
     public PedidoItemDTO() {

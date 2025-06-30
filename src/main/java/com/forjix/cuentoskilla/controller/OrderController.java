@@ -53,7 +53,7 @@ public class OrderController {
 
 
     @GetMapping
-    public ResponseEntity<List<Order>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
+    public ResponseEntity<List<PedidoDTO>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -63,7 +63,7 @@ public class OrderController {
         return ResponseEntity.ok(service.getOrdersByUser(user.getId()));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
+    public ResponseEntity<PedidoDTO> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -71,7 +71,7 @@ public class OrderController {
         if (order == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(service.convertToPedidoDTO(order));
     }
 
     @PostMapping("/{id}/pay")

@@ -56,11 +56,10 @@ public class MercadoPagoService {
         List<PreferenceItemRequest> items = new ArrayList<>();
         for (PedidoItemDTO itemDTO : pedidoDTO.getItems()) {
             PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-                .id(itemDTO.getCuentoId().toString()) // Assuming cuentoId is available and can be used as ID
-                .title(itemDTO.getTituloCuento() != null ? itemDTO.getTituloCuento() : "Cuento") // Using tituloCuento if available
+                .id(itemDTO.getCuentoId().toString())
+                .title(itemDTO.getNombreCuento() != null ? itemDTO.getNombreCuento() : "Cuento")
                 .quantity(itemDTO.getCantidad())
-                .unitPrice(itemDTO.getPrecioUnitario()) // Assuming this is already BigDecimal
-                // .description("Descripción del item") // Optional
+                .unitPrice(itemDTO.getPrecioUnitario())
                 .build();
             items.add(itemRequest);
         }

@@ -1,7 +1,7 @@
 package com.forjix.cuentoskilla.controller;
 
-import com.forjix.cuentoskilla.model.Order;
 import com.forjix.cuentoskilla.model.User;
+import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,7 +24,7 @@ public class UserController {
 
     @GetMapping("/pedidos")
     @PreAuthorize("hasRole('USER')")
-    public List<Order> getMisPedidos(@RequestParam Long uid) {
+    public List<PedidoDTO> getMisPedidos(@RequestParam Long uid) {
         return orderService.getOrders(uid);
     }
 
