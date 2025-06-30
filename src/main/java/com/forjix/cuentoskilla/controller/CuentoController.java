@@ -39,6 +39,28 @@ public class CuentoController {
         return cuentoRepository.save(cuento);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Cuento> update(@PathVariable Long id, @RequestBody Cuento cuento) {
+        System.out.println("PutMapping update() ejecutado");
+        return cuentoRepository.findById(id)
+                .map(existing -> {
+                    cuento.setId(id);
+                    return ResponseEntity.ok(cuentoRepository.save(cuento));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<Cuento> updateEstado(@PathVariable Long id, @RequestBody Cuento cuento) {
+        System.out.println("PutMapping updateEstado() ejecutado");
+        return cuentoRepository.findById(id)
+                .map(existing -> {
+                    existing.setHabilitado(cuento.isHabilitado());
+                    return ResponseEntity.ok(cuentoRepository.save(existing));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         System.out.println("DeleteMapping delete() ejecutado");
