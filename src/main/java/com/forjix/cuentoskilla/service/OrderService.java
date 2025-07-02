@@ -128,7 +128,7 @@ public class OrderService {
     public Order save(PedidoDTO pedidoDTO, User authenticatedUser) {
         Order order = new Order();
         order.setUser(authenticatedUser); // Set the authenticated user
-        order.setFecha(LocalDateTime.now());
+        order.setCreatedAt(LocalDateTime.now());
         order.setEstado(OrderStatus.PAGO_PENDIENTE); // New orders are PENDIENTE
 
         List<OrderItem> items = pedidoDTO.getItems().stream().map(dto -> {
