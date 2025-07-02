@@ -59,22 +59,57 @@ public class OrderService {
         }
     }
 
+    private PedidoItemDTO mapToItemDTO(OrderItem item) {
+        PedidoItemDTO dto = new PedidoItemDTO();
+        dto.setCuentoId(item.getCuento().getId());
+        dto.setNombreCuento(item.getNombre());
+        dto.setImagenUrl(item.getImagen_url());
+        dto.setPrecioUnitario(BigDecimal.valueOf(item.getPrecio_unitario()));
+        dto.setCantidad(item.getCantidad());
+        dto.setSubtotal(item.getSubtotal());
+        return dto;
+    }
+
+    private PedidoDTO mapToPedidoDTO(Order order) {
+        PedidoDTO dto = new PedidoDTO();
+        dto.setId(order.getId());
+        dto.setIdCapital(order.getId());
+        if (order.getCreatedAt() != null) {
+            dto.setFecha(order.getCreatedAt().toString());
+        }
+        if (order.getUser() != null) {
+            dto.setNombre(order.getUser().getNombre());
+            dto.setCorreo(order.getUser().getEmail());
+            dto.setTelefono(order.getUser().getTelefono());
+            dto.setUserId(order.getUser().getId());
+            dto.setCorreoUsuario(order.getUser().getEmail());
+        }
+        dto.setEstado(order.getEstado().toString());
+        dto.setTotal(order.getTotal() != null ? order.getTotal().doubleValue() : 0);
+        dto.setItems(order.getItems().stream().map(this::mapToItemDTO).collect(Collectors.toList()));
+        return dto;
+    }
+
+    public PedidoDTO convertToPedidoDTO(Order order){
+        return mapToPedidoDTO(order);
+    }
+
     @Transactional(readOnly = true)
-    public List<Order> getOrders(long userId) {
+    public List<PedidoDTO> getOrders(long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         List<Order> orders = orderRepo.findAll();
         orders.forEach(this::populateOrderItems);
-        return orders;
+        return orders.stream().map(this::mapToPedidoDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<Order> getOrdersByUser(long userId) {
+    public List<PedidoDTO> getOrdersByUser(long userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         List<Order> orders = orderRepo.findByUser_Id(user.getId());
         orders.forEach(this::populateOrderItems);
-        return orders;
+        return orders.stream().map(this::mapToPedidoDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -199,20 +234,7 @@ public class OrderService {
         // To fix: The method getOrCreatePaymentPreferenceUrl(Order) is undefined for the type MercadoPagoService
         // We need to pass a PedidoDTO to MercadoPagoService.createPaymentPreference.
         // Since we have the order, we can reconstruct a PedidoDTO from it.
-        PedidoDTO pedidoDTO = new PedidoDTO();
-        pedidoDTO.setEstado(order.getEstado().toString());
-        pedidoDTO.setNombre(order.getUser().getNombre()); // Assuming User has a name field
-        pedidoDTO.setCorreoUsuario(order.getUser().getEmail()); // Assuming User has an email field
-        for (OrderItem item : order.getItems()) {
-            // Assuming OrderItem has getCuento() that returns Cuento with getId()
-            PedidoItemDTO x = new PedidoItemDTO();
-            x.setCuentoId(item.getCuento().getId());
-            x.setTituloCuento(item.getNombre()); // Assuming OrderItem has getNombre() for title
-            x.setPrecioUnitario(BigDecimal.valueOf(item.getPrecio_unitario())); // Convert double to BigDecimal
-            x.setCantidad(item.getCantidad());
-            pedidoDTO.getItems().add(x); // Add item to the list
-        }
-
+        PedidoDTO pedidoDTO = mapToPedidoDTO(order);
         return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
 
     

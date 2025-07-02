@@ -53,7 +53,7 @@ public class OrderController {
 
 
     @GetMapping
-    public ResponseEntity<List<Order>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
+    public ResponseEntity<List<PedidoDTO>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
