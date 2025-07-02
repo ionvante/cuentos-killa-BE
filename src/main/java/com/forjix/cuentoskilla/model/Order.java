@@ -17,7 +17,7 @@ public class Order {
     private Long id;
 
     @Column(name = "created_at")
-    private LocalDateTime fecha;
+    private LocalDateTime created_at;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus estado; // Generado, Pagado, etc.
@@ -46,12 +46,12 @@ public class Order {
         this.id = id;
     }
 
-    public LocalDateTime getFecha() {
-        return fecha;
+    public LocalDateTime getCreatedAt() {
+        return created_at;
     }
 
-    public void setFecha(LocalDateTime createdAt) {
-        this.fecha = createdAt;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.created_at = createdAt;
     }
 
     public OrderStatus getEstado() {
