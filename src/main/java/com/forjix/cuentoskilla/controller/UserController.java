@@ -33,4 +33,11 @@ public class UserController {
     public User getPerfil(@RequestParam Long uid) {
         return userService.findById(uid).orElse(null);
     }
+
+    @GetMapping("/usuarios")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<User> getUsers() {
+        System.out.println("getUsers findAll() ejecutado");
+        return userService.findAll().orElse(null);
+    }
 }

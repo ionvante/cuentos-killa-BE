@@ -63,7 +63,7 @@ public class OrderController {
         return ResponseEntity.ok(service.getOrdersByUser(user.getId()));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
+    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {        
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -71,6 +71,7 @@ public class OrderController {
         if (order == null) {
             return ResponseEntity.notFound().build();
         }
+        System.out.println("getOrder getOrderByIdAndUser() ejecutado");
         return ResponseEntity.ok(order);
     }
 

@@ -4,6 +4,7 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,4 +23,7 @@ public class UserService {
         return repo.save(user);
     }
 
+    public Optional<List<User>> findAll() {
+        return Optional.of(repo.findAll());
+    }
 }
