@@ -82,7 +82,7 @@ public class ConfigController {
 
     @DeleteMapping("/category/{code}/item/{id2}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteItem(@PathVariable String code, @PathVariable Integer id2) {
+    public ResponseEntity<?> deleteItem(@PathVariable String code, @PathVariable Integer id2) {
         return categoryRepo.findByCode(code).map(cat -> {
             ConfigItemId itemId = new ConfigItemId(cat.getId1(), id2);
             if (!itemRepo.existsById(itemId)) {
@@ -90,6 +90,6 @@ public class ConfigController {
             }
             itemRepo.deleteById(itemId);
             return ResponseEntity.noContent().build();
-        }).orElseGet(() -> ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
