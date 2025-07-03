@@ -90,6 +90,6 @@ public class ConfigController {
             }
             itemRepo.deleteById(itemId);
             return ResponseEntity.noContent().build();
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
