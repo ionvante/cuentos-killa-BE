@@ -92,4 +92,15 @@ public class ConfigController {
             return ResponseEntity.noContent().build();
         }).orElse(ResponseEntity.notFound().build());
     }
+    
+    @GetMapping("/category/{code}/item/{id2}")
+    public ResponseEntity<ConfigItem> getItemByCategory(
+            @PathVariable String code,
+            @PathVariable Integer id2) {
+        return categoryRepo.findByCode(code)
+            .flatMap(cat -> itemRepo.findById(new ConfigItemId(cat.getId1(), id2)))
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
 }
