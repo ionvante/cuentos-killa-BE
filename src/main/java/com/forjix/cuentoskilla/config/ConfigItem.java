@@ -1,5 +1,8 @@
 package com.forjix.cuentoskilla.config;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +20,7 @@ public class ConfigItem {
     private String label;
 
     @Column(columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String data;
 
     @Column(nullable = false)
