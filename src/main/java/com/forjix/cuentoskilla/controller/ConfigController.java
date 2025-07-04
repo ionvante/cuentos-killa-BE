@@ -27,7 +27,6 @@ public class ConfigController {
     }
 
     @GetMapping("/category")
-    @PreAuthorize("hasRole('ADMIN')")
     public List<ConfigCategory> listCategories() {
         return categoryRepo.findAll();
     }
@@ -44,7 +43,6 @@ public class ConfigController {
     }
 
     @GetMapping("/category/{code}/item")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ConfigItem>> listItems(@PathVariable String code) {
         return categoryRepo.findByCode(code)
                 .map(cat -> ResponseEntity.ok(itemRepo.findByCategoryIdOrderById2(cat.getId1())))
@@ -52,7 +50,6 @@ public class ConfigController {
     }
 
     @PostMapping("/category/{code}/item")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createItem(@PathVariable String code, @RequestBody ConfigItem item) {
         return categoryRepo.findByCode(code)
                 .map(cat -> {

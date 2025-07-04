@@ -57,7 +57,8 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
             .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
-              .anyRequest().authenticated()
+            .requestMatchers("/api/config/**").permitAll()  // 🔓 Público
+            .anyRequest().authenticated()
           )        
             .addFilterBefore(new JwtAuthFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new FirebaseTokenFilter(), JwtAuthFilter.class);
