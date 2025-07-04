@@ -133,26 +133,41 @@
                     <target>17</target>
                 </configuration>
             </plugin>
-            <!-- Plugin para subir el bundle de código fuente a Sentry -->
-            <plugin>
-                <groupId>io.sentry</groupId>
-                <artifactId>sentry-maven-plugin</artifactId>
-                <version>0.6.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <debugSentryCli>true</debugSentryCli>
-                    <org>cuentos-de-killa</org>
-                    <project>java-spring-boot</project>
-                    <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>uploadSourceBundle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>sentry</id>
+            <activation>
+                <property>
+                    <name>env.SENTRY_AUTH_TOKEN</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Plugin para subir el bundle de código fuente a Sentry -->
+                    <plugin>
+                        <groupId>io.sentry</groupId>
+                        <artifactId>sentry-maven-plugin</artifactId>
+                        <version>0.6.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <debugSentryCli>true</debugSentryCli>
+                            <org>cuentos-de-killa</org>
+                            <project>java-spring-boot</project>
+                            <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>uploadSourceBundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
