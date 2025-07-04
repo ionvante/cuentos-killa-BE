@@ -102,6 +102,13 @@
             <version>2.2.22</version>
         </dependency>
 
+        <!-- Sentry for error tracking -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter</artifactId>
+            <version>7.5.0</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -125,6 +132,26 @@
                     <source>17</source>
                     <target>17</target>
                 </configuration>
+            </plugin>
+            <!-- Plugin para subir el bundle de código fuente a Sentry -->
+            <plugin>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-maven-plugin</artifactId>
+                <version>0.6.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <debugSentryCli>true</debugSentryCli>
+                    <org>cuentos-de-killa</org>
+                    <project>java-spring-boot</project>
+                    <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>uploadSourceBundle</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
