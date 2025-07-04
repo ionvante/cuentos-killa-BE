@@ -24,3 +24,9 @@ mercadopago:
     failure: https://your-frontend.com/payment/failure
     pending: https://your-frontend.com/payment/pending
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
+
+sentry:
+  dsn: https://206c3de140ffe2f6be2200ed522250b1@o4509612268912640.ingest.us.sentry.io/4509612333727744
+  send-default-pii: true
+  logging:
+    minimum-event-level: error
