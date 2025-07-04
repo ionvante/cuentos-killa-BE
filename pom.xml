@@ -89,6 +89,13 @@
             <version>2.4.0</version>
         </dependency>
 
+        <!-- Swagger/OpenAPI Annotations -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.22</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
