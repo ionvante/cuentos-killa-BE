@@ -11,6 +11,12 @@ spring:
 file:
   upload-dir: ./uploads/vouchers
 
+upload:
+  max-size: 5242880
+
+storage:
+  provider: local
+
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
   back-urls:
