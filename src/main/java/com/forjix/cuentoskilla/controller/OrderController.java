@@ -175,10 +175,11 @@ public class OrderController {
         }
     }
 
-    @PostMapping("/voucher")
+    @PostMapping("/{id}/voucher")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> uploadVoucher(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("idpedido") long orderId, // Changed to UUID
+            @PathVariable("id") long orderId,
+            @RequestPart("file") MultipartFile file,
             @RequestParam(name = "dispositivo", required = false, defaultValue = "Desconocido") String dispositivo,
             HttpServletRequest request, @AuthenticationPrincipal User user) {
         
@@ -202,19 +203,19 @@ public class OrderController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Valid Order ID is required."));
             }
 
-            logger.info("Attempting to upload voucher for orderId: {}, fileName: {}, ip: {}, device: {} by user {}", 
+            logger.info("Attempting to upload voucher for orderId: {}, fileName: {}, ip: {}, device: {} by user {}",
                         orderId, originalFileName, ip, dispositivo, user.getId());
-            
+
             // storageService.store should also verify user ownership of the orderId
             Voucher voucher = storageService.store(file, orderId, originalFileName, contentType, ip, dispositivo, fileSize);
             
-            logger.info("Voucher uploaded successfully for orderId: {}. Voucher ID: {}, FileName: {} by user {}", 
+            logger.info("Voucher uploaded successfully for orderId: {}. Voucher ID: {}, FileName: {} by user {}",
                         orderId, voucher.getId(), voucher.getNombreArchivo(), user.getId());
-            
-            return ResponseEntity.ok(Map.of(
-                "message", "Voucher uploaded successfully!", 
-                "voucherId", voucher.getId(),
-                "fileName", voucher.getNombreArchivo()
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "id", voucher.getId(),
+                "fileUrl", voucher.getFilePath(),
+                "status", voucher.getOrder().getEstado().toString()
             ));
         } catch (StorageException e) {
             logger.error("StorageException for orderId {} by user {}: {}", orderId, user.getId(), e.getMessage(), e);
