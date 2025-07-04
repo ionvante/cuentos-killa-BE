@@ -2,6 +2,7 @@ package com.forjix.cuentoskilla.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator; // Added
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID; // Added
@@ -25,6 +26,9 @@ public class User {
     private String documento; // DNI o RUC
 
     private String role;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
@@ -102,6 +106,14 @@ public class User {
         this.role = role;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public List<Order> getOrders() {
         return orders;
     }
@@ -112,6 +124,13 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Order> orders;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 
     // Getters y setters
 }
