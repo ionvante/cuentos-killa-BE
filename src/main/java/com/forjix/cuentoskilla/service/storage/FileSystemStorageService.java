@@ -1,10 +1,12 @@
 package com.forjix.cuentoskilla.service.storage;
 
 import com.forjix.cuentoskilla.model.Order;
+import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.model.Voucher;
 import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.VoucherRepository;
 import com.forjix.cuentoskilla.service.StorageService;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,14 +29,21 @@ public class FileSystemStorageService implements StorageService {
     @Value("${file.upload-dir:./uploads}") // Default to ./uploads if not specified in properties
     private String uploadDir;
 
+    @Value("${upload.max-size:5242880}")
+    private long maxFileSize;
+
     private Path rootLocation;
 
     private final VoucherRepository voucherRepository;
     private final OrderRepository orderRepository;
+    private final MeterRegistry meterRegistry;
 
-    public FileSystemStorageService(VoucherRepository voucherRepository, OrderRepository orderRepository) {
+    public FileSystemStorageService(VoucherRepository voucherRepository,
+                                   OrderRepository orderRepository,
+                                   MeterRegistry meterRegistry) {
         this.voucherRepository = voucherRepository;
         this.orderRepository = orderRepository;
+        this.meterRegistry = meterRegistry;
     }
 
     @PostConstruct
@@ -48,8 +57,10 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public Voucher store(MultipartFile file, Long orderId, String originalFileName, String contentType, String ip, String dispositivo, long fileSize) {
+    public Voucher store(MultipartFile file, Long orderId, String originalFileName,
+                         String contentType, String ip, String dispositivo, long fileSize) {
         if (file.isEmpty()) {
+            meterRegistry.counter("voucher_upload_fail").increment();
             throw new StorageException("Failed to store empty file.");
         }
 
@@ -61,6 +72,18 @@ public class FileSystemStorageService implements StorageService {
         // Ensure filename is not empty after cleaning
         if (filename.trim().isEmpty()) {
             filename = "unnamedfile"; // Provide a default name if original is empty or was just spaces
+        }
+
+        String extension = StringUtils.getFilenameExtension(filename);
+        if (extension == null || !(extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg")
+                || extension.equalsIgnoreCase("png") || extension.equalsIgnoreCase("pdf"))) {
+            meterRegistry.counter("voucher_upload_fail").increment();
+            throw new StorageException("INVALID_FILE");
+        }
+
+        if (fileSize > maxFileSize) {
+            meterRegistry.counter("voucher_upload_fail").increment();
+            throw new StorageException("MAX_UPLOAD_SIZE_EXCEEDED");
         }
         String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
         
@@ -75,6 +98,7 @@ public class FileSystemStorageService implements StorageService {
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
+            meterRegistry.counter("voucher_upload_fail").increment();
             throw new StorageException("Failed to store file.", e);
         }
 
@@ -87,8 +111,15 @@ public class FileSystemStorageService implements StorageService {
         voucher.setIp(ip);
         voucher.setNombreArchivo(uniqueFilename); // Store the unique filename
         voucher.setTipoArchivo(contentType);
-        voucher.setFilePath(destinationFile.toString()); // Add this line to store the full path
+        voucher.setFilePath(destinationFile.toString()); // Store the full path
 
-        return voucherRepository.save(voucher);
+        Voucher saved = voucherRepository.save(voucher);
+
+        order.setEstado(OrderStatus.PAGO_ENVIADO);
+        orderRepository.save(order);
+
+        meterRegistry.counter("voucher_upload_success").increment();
+
+        return saved;
     }
 }
