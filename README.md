@@ -23,3 +23,4 @@ Se incluye la dependencia **Sentry** para registrar errores en todos los endpoin
 Defina la variable de entorno `SENTRY_DSN` con el DSN de su proyecto para habilitar los reportes.
 Para que el plugin de Maven pueda subir el código fuente a Sentry debe
 establecer la variable `SENTRY_AUTH_TOKEN` con un token válido.
+Se utiliza `sentry-spring-boot-starter` 7.15.0 que es compatible con Spring Boot 3.3.
