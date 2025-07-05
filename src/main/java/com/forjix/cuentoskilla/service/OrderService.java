@@ -237,7 +237,17 @@ public class OrderService {
         PedidoDTO pedidoDTO = mapToPedidoDTO(order);
         return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
 
-    
+
+    }
+
+    @Transactional(readOnly = true)
+    public OrderStatus getOrderStatus(Long orderId, Long userId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+        if (!order.getUser().getId().equals(userId)) {
+            throw new SecurityException("User not authorized to access this order.");
+        }
+        return order.getEstado();
     }
 
     @Transactional

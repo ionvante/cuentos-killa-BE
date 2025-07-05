@@ -65,7 +65,7 @@ public class OrderController {
         return ResponseEntity.ok(service.getOrdersByUser(user.getId()));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {        
+    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -75,6 +75,21 @@ public class OrderController {
         }
         System.out.println("getOrder getOrderByIdAndUser() ejecutado");
         return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<?> getOrderStatus(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            OrderStatus status = service.getOrderStatus(id, user.getId());
+            return ResponseEntity.ok(Map.of("estado", status.toString()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PostMapping("/{id}/pay")
