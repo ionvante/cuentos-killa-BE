@@ -1,4 +1,4 @@
-depackage com.forjix.cuentoskilla.controller;
+package com.forjix.cuentoskilla.controller;
 
 import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.*; // Import all from model
