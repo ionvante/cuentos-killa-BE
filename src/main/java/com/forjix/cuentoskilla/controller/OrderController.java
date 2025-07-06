@@ -137,16 +137,16 @@ public class OrderController {
         // Ensure the PedidoDTO's user matches the authenticated user, or set it.
         // This depends on how PedidoDTO is designed and if it contains user info.
         // For now, assuming service.save() handles user association correctly or PedidoDTO is already user-aware.
-        // If pedidoDTO.getCorreoUsuario() is used, ensure it matches user.getEmail() or similar.
+        // If pedidoDTO.getCorreoUsuario() is used, ensure it matches servUser.findById(user.getId()).getEmail() or similar.
 
         Order savedOrder;
         try {
-            logger.info("Saving order before creating Mercado Pago preference for user: {}", user.getEmail());
+            logger.info("Saving order before creating Mercado Pago preference for user: {}", servUser.findById(user.getId()).get().getEmail());
             // Pass the authenticated user object or its ID to the service.save method
-            savedOrder = service.save(pedidoDTO, user); // Modified to pass user
+            savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get()); // Modified to pass user
             logger.info("Order saved with ID: {}. Attempting to create Mercado Pago preference.", savedOrder.getId());
         } catch (Exception e) {
-            logger.error("Error saving order before creating Mercado Pago preference for user {}: {}", user.getEmail(), e.getMessage(), e);
+            logger.error("Error saving order before creating Mercado Pago preference for user {}: {}", servUser.findById(user.getId()).get().user.getEmail(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(Map.of("error", "Error saving order: " + e.getMessage()));
         }
