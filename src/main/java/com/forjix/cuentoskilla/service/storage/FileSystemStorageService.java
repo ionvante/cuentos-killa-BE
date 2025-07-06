@@ -53,7 +53,7 @@ public class FileSystemStorageService implements StorageService {
     @PostConstruct
     public void init() {
         try {
-            this.rootLocation = Paths.get(uploadDir);
+            this.rootLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(rootLocation);
             logger.info("Storage root location initialized at: {}", rootLocation.toAbsolutePath());
         } catch (IOException e) {
@@ -73,7 +73,8 @@ public class FileSystemStorageService implements StorageService {
                 .orElseThrow(() -> new StorageException("Order not found with id: " + orderId));
 
         // Sanitize filename and add a UUID to prevent collisions
-        String filename = StringUtils.cleanPath(originalFileName != null ? originalFileName : ""); // Handle null originalFileName
+        String filename = StringUtils.cleanPath(
+                Paths.get(originalFileName != null ? originalFileName : "").getFileName().toString());
         // Ensure filename is not empty after cleaning
         if (filename.trim().isEmpty()) {
             filename = "unnamedfile"; // Provide a default name if original is empty or was just spaces
@@ -94,9 +95,9 @@ public class FileSystemStorageService implements StorageService {
 
         Path destinationFile = this.rootLocation.resolve(Paths.get(uniqueFilename))
                 .normalize().toAbsolutePath();
-        logger.info("Storing voucher. rootLocation: {} destination: {}", this.rootLocation.toAbsolutePath(), destinationFile);
+        logger.info("Storing voucher. rootLocation: {} destination: {}", this.rootLocation.toAbsolutePath(), destinationFile); 
 
-        if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
+        if (!destinationFile.getParent().equals(this.rootLocation)) {
             // This is a security check
             throw new StorageException("Cannot store file outside current directory.");
         }
