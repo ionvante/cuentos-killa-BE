@@ -55,7 +55,7 @@ public class FileSystemStorageService implements StorageService {
         try {
             this.rootLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(rootLocation);
-            logger.info("Storage root location initialized at: {}", rootLocation);
+            logger.info("Storage root location initialized at: {}", rootLocation.toAbsolutePath());
         } catch (IOException e) {
             throw new StorageException("Could not initialize storage location", e);
         }
@@ -95,7 +95,7 @@ public class FileSystemStorageService implements StorageService {
 
         Path destinationFile = this.rootLocation.resolve(Paths.get(uniqueFilename))
                 .normalize().toAbsolutePath();
-        logger.info("Storing voucher. rootLocation: {} destination: {}", this.rootLocation, destinationFile);
+        logger.info("Storing voucher. rootLocation: {} destination: {}", this.rootLocation.toAbsolutePath(), destinationFile); 
 
         if (!destinationFile.getParent().equals(this.rootLocation)) {
             // This is a security check
