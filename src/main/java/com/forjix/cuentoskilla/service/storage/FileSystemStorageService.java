@@ -7,6 +7,8 @@ import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.VoucherRepository;
 import com.forjix.cuentoskilla.service.StorageService;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,6 +27,8 @@ import java.util.UUID;
 
 @Service
 public class FileSystemStorageService implements StorageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemStorageService.class);
 
     @Value("${file.upload-dir:./uploads}") // Default to ./uploads if not specified in properties
     private String uploadDir;
@@ -51,6 +55,7 @@ public class FileSystemStorageService implements StorageService {
         try {
             this.rootLocation = Paths.get(uploadDir);
             Files.createDirectories(rootLocation);
+            logger.info("Storage root location initialized at: {}", rootLocation.toAbsolutePath());
         } catch (IOException e) {
             throw new StorageException("Could not initialize storage location", e);
         }
@@ -86,9 +91,10 @@ public class FileSystemStorageService implements StorageService {
             throw new StorageException("MAX_UPLOAD_SIZE_EXCEEDED");
         }
         String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
-        
+
         Path destinationFile = this.rootLocation.resolve(Paths.get(uniqueFilename))
                 .normalize().toAbsolutePath();
+        logger.info("Storing voucher. rootLocation: {} destination: {}", this.rootLocation.toAbsolutePath(), destinationFile);
 
         if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
             // This is a security check
