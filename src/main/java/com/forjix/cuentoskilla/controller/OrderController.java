@@ -1,4 +1,4 @@
-package com.forjix.cuentoskilla.controller;
+depackage com.forjix.cuentoskilla.controller;
 
 import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.*; // Import all from model
@@ -146,7 +146,7 @@ public class OrderController {
             savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get()); // Modified to pass user
             logger.info("Order saved with ID: {}. Attempting to create Mercado Pago preference.", savedOrder.getId());
         } catch (Exception e) {
-            logger.error("Error saving order before creating Mercado Pago preference for user {}: {}", servUser.findById(user.getId()).get().user.getEmail(), e.getMessage(), e);
+            logger.error("Error saving order before creating Mercado Pago preference for user {}: {}", servUser.findById(user.getId()).get().getEmail(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(Map.of("error", "Error saving order: " + e.getMessage()));
         }
