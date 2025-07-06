@@ -130,7 +130,7 @@ public class OrderController {
     }
 
     @PostMapping("/mercadopago/create-preference") // New Endpoint
-    public ResponseEntity<?> createPaymentPreference(@RequestBody PedidoDTO pedidoDTO, @AuthenticationPrincipal User user) {
+    public ResponseEntity<?> createPaymentPreference(@RequestBody PedidoDTO pedidoDTO, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -178,7 +178,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Void> delete(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -198,7 +198,7 @@ public class OrderController {
             @PathVariable("id") long orderId,
             @RequestPart("file") MultipartFile file,
             @RequestParam(name = "dispositivo", required = false, defaultValue = "Desconocido") String dispositivo,
-            HttpServletRequest request, @AuthenticationPrincipal User user) {
+            HttpServletRequest request, @AuthenticationPrincipal UserDetailsImpl user) {
         
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
