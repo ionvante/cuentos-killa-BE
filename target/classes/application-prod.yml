@@ -12,7 +12,7 @@ spring:
     show-sql: true
 
 file:
-  upload-dir: ./uploads/vouchers
+  upload-dir: uploads/vouchers
 
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing

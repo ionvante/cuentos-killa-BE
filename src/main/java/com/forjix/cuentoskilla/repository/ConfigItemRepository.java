@@ -1,7 +1,8 @@
 package com.forjix.cuentoskilla.repository;
 
-import com.forjix.cuentoskilla.config.ConfigItem;
 import com.forjix.cuentoskilla.config.ConfigItemId;
+import com.forjix.cuentoskilla.model.ConfigItem;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,15 +1,18 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/cuentoskilla
-    username: postgres
-    password: 993753
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      data-source-properties:
+        prepareThreshold: 0       # evita problema con Supabase Pooler        
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
 
 file:
-  upload-dir: ./uploads/vouchers
+  upload-dir: uploads/vouchers
 
 upload:
   max-size: 5242880
@@ -26,7 +29,7 @@ mercadopago:
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
 
 sentry:
-  dsn: https://206c3de140ffe2f6be2200ed522250b1@o4509612268912640.ingest.us.sentry.io/4509612333727744
+  dsn: ${SENTRY_DSN:}
   send-default-pii: true
   logging:
     minimum-event-level: error

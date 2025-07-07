@@ -1,7 +1,9 @@
-package com.forjix.cuentoskilla.config;
+package com.forjix.cuentoskilla.model;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import com.forjix.cuentoskilla.config.ConfigItemId;
 
 import jakarta.persistence.*;
 

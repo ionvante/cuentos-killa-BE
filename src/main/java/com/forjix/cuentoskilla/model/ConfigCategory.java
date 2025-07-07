@@ -1,4 +1,4 @@
-package com.forjix.cuentoskilla.config;
+package com.forjix.cuentoskilla.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;

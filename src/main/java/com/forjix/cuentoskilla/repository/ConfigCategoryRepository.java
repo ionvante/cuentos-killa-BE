@@ -1,7 +1,8 @@
 package com.forjix.cuentoskilla.repository;
 
-import com.forjix.cuentoskilla.config.ConfigCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.forjix.cuentoskilla.model.ConfigCategory;
 
 import java.util.Optional;
 

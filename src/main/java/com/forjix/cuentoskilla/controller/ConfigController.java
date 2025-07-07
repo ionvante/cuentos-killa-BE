@@ -1,8 +1,8 @@
 package com.forjix.cuentoskilla.controller;
 
-import com.forjix.cuentoskilla.config.ConfigCategory;
-import com.forjix.cuentoskilla.config.ConfigItem;
 import com.forjix.cuentoskilla.config.ConfigItemId;
+import com.forjix.cuentoskilla.model.ConfigCategory;
+import com.forjix.cuentoskilla.model.ConfigItem;
 import com.forjix.cuentoskilla.repository.ConfigCategoryRepository;
 import com.forjix.cuentoskilla.repository.ConfigItemRepository;
 import org.springframework.http.HttpStatus;
