@@ -223,6 +223,16 @@ public class OrderController {
             logger.info("Attempting to upload voucher for orderId: {}, fileName: {}, ip: {}, device: {} by user {}",
                         orderId, originalFileName, ip, dispositivo, user.getId());
 
+            Order order = service.getOrderByIdAndUser(orderId, user.getId());
+            if (order.getEstado() == OrderStatus.PAGADO) {
+                logger.warn("Voucher upload attempt for paid order {} by user {}", orderId, user.getId());
+                return ResponseEntity.badRequest().body(Map.of("error", "Order already paid."));
+            }
+            if (order.getEstado() == OrderStatus.VERIFICADO) {
+                logger.warn("Voucher upload attempt for verified order {} by user {}", orderId, user.getId());
+                return ResponseEntity.badRequest().body(Map.of("error", "Order already verified."));
+            }
+
             // storageService.store should also verify user ownership of the orderId
             Voucher voucher = storageService.store(file, orderId, originalFileName, contentType, ip, dispositivo, fileSize);
             
