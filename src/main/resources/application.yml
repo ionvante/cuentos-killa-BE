@@ -20,6 +20,10 @@ upload:
 storage:
   provider: local
 
+firebase:
+  credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
+  bucket: ${FIREBASE_BUCKET:}
+
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
   back-urls:
