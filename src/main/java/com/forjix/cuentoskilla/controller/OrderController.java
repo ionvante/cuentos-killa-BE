@@ -7,6 +7,7 @@ import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
 import com.forjix.cuentoskilla.service.UserService;
 import com.forjix.cuentoskilla.service.MercadoPagoService; // Added
+import com.forjix.cuentoskilla.service.PaymentVoucherService;
 import com.forjix.cuentoskilla.service.storage.StorageException;
 import com.mercadopago.resources.preference.Preference; // Added
 import com.mercadopago.exceptions.MPException; // Added
@@ -43,12 +44,16 @@ public class OrderController {
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private final OrderService service;
     private final StorageService storageService;
+    private final PaymentVoucherService voucherService;
     private final MercadoPagoService mercadoPagoService; // Added
     private final UserService servUser; // Added
 
-    public OrderController(OrderService service, StorageService storageService, MercadoPagoService mercadoPagoService,UserService servUser) { // Modified
+    public OrderController(OrderService service, StorageService storageService,
+                           MercadoPagoService mercadoPagoService, UserService servUser,
+                           PaymentVoucherService voucherService) {
         this.service = service;
         this.storageService = storageService;
+        this.voucherService = voucherService;
         this.mercadoPagoService = mercadoPagoService; // Added
         this.servUser = servUser; // Added
     }
@@ -260,6 +265,40 @@ public class OrderController {
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                              .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/voucherF")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> uploadVoucherFirebase(
+            @PathVariable("id") Long orderId,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetailsImpl user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            Order order = service.getOrderByIdAndUser(orderId, user.getId());
+            if (order.getEstado() == OrderStatus.PAGADO) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Order already paid"));
+            }
+            PaymentVoucher voucher = voucherService.upload(orderId, file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "id", voucher.getId(),
+                    "filename", voucher.getFilename(),
+                    "mimeType", voucher.getMimeType(),
+                    "size", voucher.getSize(),
+                    "firebasePath", voucher.getFirebasePath(),
+                    "uploadDate", voucher.getUploadDate().toString()
+            ));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (StorageException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

@@ -4,16 +4,13 @@ import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.Order;
 import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.model.PaymentVoucher;
-import com.forjix.cuentoskilla.model.Rol;
 import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.service.PaymentVoucherService;
-import com.forjix.cuentoskilla.service.storage.StorageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -29,29 +26,6 @@ public class PaymentVoucherController {
         this.orderRepository = orderRepository;
     }
 
-    @PostMapping("/{id}/voucher")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> upload(@PathVariable("id") Long orderId,
-                                    @RequestParam("file") MultipartFile file,
-                                    @AuthenticationPrincipal UserDetailsImpl user) {
-        Order order = orderRepository.findById(orderId).orElse(null);
-        if (order == null) return ResponseEntity.notFound().build();
-        if (!order.getUser().getId().equals(user.getId())) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        if (order.getEstado() == OrderStatus.PAGADO) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error","Order already paid"));
-        try {
-            PaymentVoucher voucher = voucherService.upload(orderId, file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", voucher.getId(),
-                    "filename", voucher.getFilename(),
-                    "mimeType", voucher.getMimeType(),
-                    "size", voucher.getSize(),
-                    "firebasePath", voucher.getFirebasePath(),
-                    "uploadDate", voucher.getUploadDate().toString()
-            ));
-        } catch (StorageException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
-    }
 
     @GetMapping("/{id}/voucher-url")
     @PreAuthorize("hasRole('ADMIN')")
