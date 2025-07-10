@@ -10,6 +10,7 @@ import com.forjix.cuentoskilla.service.MercadoPagoService;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
 import com.forjix.cuentoskilla.service.UserService;
+import com.forjix.cuentoskilla.service.PaymentVoucherService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class PaymentVoucherControllerTest {
 
     @MockBean
     private StorageService storageService;
+
+    @MockBean
+    private PaymentVoucherService voucherService;
 
     @MockBean
     private MercadoPagoService mercadoPagoService;
