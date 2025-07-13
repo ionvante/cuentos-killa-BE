@@ -3,6 +3,8 @@ steps:
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/cuentos-killa-backend', '.']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/cuentos-killa-backend']
-
+options:
+  # Le dice a Cloud Build que use (o cree) un bucket regional de logs
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 images:
   - 'gcr.io/$PROJECT_ID/cuentos-killa-backend'
