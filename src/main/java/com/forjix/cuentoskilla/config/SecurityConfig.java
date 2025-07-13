@@ -71,7 +71,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/"));
+        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/","https://cuentoskilla.web.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Si usas cookies/token
