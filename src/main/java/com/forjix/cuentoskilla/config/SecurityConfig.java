@@ -35,23 +35,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         
         http
-        // .cors()
-        // .and()
-        // .csrf(csrf -> csrf.disable())
-        //     .authorizeHttpRequests(auth -> auth
-        //         .requestMatchers("http://localhost:4200").permitAll() // o el puerto que uses
-        //         .requestMatchers("https://cuentos-killa-fe.vercel.app").permitAll() // o el puerto que uses
-        //         .requestMatchers("/api/auth/**").permitAll()
-        //         .requestMatchers("/api/cuentos/**").permitAll()  // 🔓 Público
-        //         .requestMatchers("/api/orders/**").authenticated() // Now requires authentication
-        //         .requestMatchers("/api/**").authenticated()
-        //         .anyRequest().permitAll()
-        //     )
-
          // 1) habilita CORS y deshabilita CSRF (útil para APIs REST)
           .cors(Customizer.withDefaults())
           .csrf(csrf -> csrf.disable())
-
           // 2) configura tus reglas de seguridad
           .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**").permitAll()
@@ -62,16 +48,13 @@ public class SecurityConfig {
           )        
             .addFilterBefore(new JwtAuthFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new FirebaseTokenFilter(), JwtAuthFilter.class);
-
-
-
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/","https://cuentoskilla.web.app/"));
+        config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/","https://killacuentos.web.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Si usas cookies/token
