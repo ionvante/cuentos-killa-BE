@@ -1,11 +1,10 @@
 package com.forjix.cuentoskilla.repository;
 
 import com.forjix.cuentoskilla.model.CartItem;
-import com.forjix.cuentoskilla.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-    List<CartItem> findByUser(User user);
+    List<CartItem> findByUser_Id(Long userId);
 }

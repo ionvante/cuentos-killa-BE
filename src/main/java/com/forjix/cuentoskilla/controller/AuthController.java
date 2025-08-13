@@ -4,6 +4,7 @@ import com.forjix.cuentoskilla.config.JwtUtil;
 import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.LoginRequest;
+import com.forjix.cuentoskilla.model.Rol;
 import com.forjix.cuentoskilla.model.DTOs.LoginResponse;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -39,7 +40,7 @@ public class AuthController {
     @PostMapping("/register")
     public User register(@Valid @RequestBody User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("USER");
+        user.setRole(Rol.USER);
         return userRepo.save(user);
     }
 
