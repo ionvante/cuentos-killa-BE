@@ -78,7 +78,7 @@ public class OrderController {
         if (order == null) {
             return ResponseEntity.notFound().build();
         }
-        System.out.println("getOrder getOrderByIdAndUser() ejecutado");
+        logger.info("getOrder getOrderByIdAndUser() ejecutado");
         return ResponseEntity.ok(order);
     }
 

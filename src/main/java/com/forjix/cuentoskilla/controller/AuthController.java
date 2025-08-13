@@ -7,6 +7,8 @@ import com.forjix.cuentoskilla.model.DTOs.LoginResponse;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import jakarta.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @CrossOrigin
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
@@ -43,7 +47,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse>  login(@RequestBody Map<String, String> body) {
-        System.out.println("🗝️  Login attempt for email:" + body.get("email") +" - pass:"+ body.get("password") );
+        logger.info("Login attempt for email: {} - pass: {}", body.get("email"), body.get("password"));
         Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(body.get("email"), body.get("password")));
         UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();

@@ -3,6 +3,8 @@ package com.forjix.cuentoskilla.controller;
 import com.forjix.cuentoskilla.model.Cuento;
 import com.forjix.cuentoskilla.repository.CuentoRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,8 @@ import java.util.List;
 @CrossOrigin
 public class CuentoController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CuentoController.class);
+
     private final CuentoRepository cuentoRepository;
 
     public CuentoController(CuentoRepository cuentoRepository) {
@@ -21,27 +25,27 @@ public class CuentoController {
 
     @GetMapping
     public List<Cuento> getAll() {
-        System.out.println("GetMapping getAll() ejecutado");
+        logger.info("GetMapping getAll() ejecutado");
         return cuentoRepository.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Cuento> getByIdCuentos(@PathVariable Long id) {
-        System.out.println("GetMapping getByIdCuentos() ejecutado");
+        logger.info("GetMapping getByIdCuentos() ejecutado");
         return cuentoRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-    }  
+    }
 
     @PostMapping
     public Cuento create(@RequestBody Cuento cuento) {
-        System.out.println("PostMapping create() ejecutado");
+        logger.info("PostMapping create() ejecutado");
         return cuentoRepository.save(cuento);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Cuento> update(@PathVariable Long id, @RequestBody Cuento cuento) {
-        System.out.println("PutMapping update() ejecutado");
+        logger.info("PutMapping update() ejecutado");
         return cuentoRepository.findById(id)
                 .map(existing -> {
                     cuento.setId(id);
@@ -52,7 +56,7 @@ public class CuentoController {
 
     @PutMapping("/{id}/estado")
     public ResponseEntity<Cuento> updateEstado(@PathVariable Long id, @RequestBody Cuento cuento) {
-        System.out.println("PutMapping updateEstado() ejecutado");
+        logger.info("PutMapping updateEstado() ejecutado");
         return cuentoRepository.findById(id)
                 .map(existing -> {
                     existing.setHabilitado(cuento.isHabilitado());
@@ -63,7 +67,7 @@ public class CuentoController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        System.out.println("DeleteMapping delete() ejecutado");
+        logger.info("DeleteMapping delete() ejecutado");
         cuentoRepository.deleteById(id);
     }
 }
