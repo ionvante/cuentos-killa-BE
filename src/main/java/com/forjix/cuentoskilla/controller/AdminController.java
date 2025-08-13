@@ -1,5 +1,7 @@
 package com.forjix.cuentoskilla.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -8,10 +10,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin
 public class AdminController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
     @GetMapping("/pedidos")
     @PreAuthorize("hasRole('ADMIN')")
     public String getPedidosAdmin() {
-        System.out.println("getPedidosAdmin() ejecutado");
+        logger.info("getPedidosAdmin() ejecutado");
         return "Listado de pedidos para el administrador";
     }
 

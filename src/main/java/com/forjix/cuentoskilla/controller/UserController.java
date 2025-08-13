@@ -4,6 +4,8 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,8 @@ import java.util.List;
 @RequestMapping("/api/user")
 @CrossOrigin
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final OrderService orderService;
     private final UserService userService;
@@ -37,7 +41,7 @@ public class UserController {
     @GetMapping("/usuarios")
     @PreAuthorize("hasRole('ADMIN')")
     public List<User> getUsers() {
-        System.out.println("getUsers findAll() ejecutado");
+        logger.info("getUsers findAll() ejecutado");
         return userService.findAll().orElse(null);
     }
 }
