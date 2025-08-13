@@ -29,9 +29,11 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             try {
                 FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
                 String uid = decodedToken.getUid();
-                String role = decodedToken.getClaims().getOrDefault("role", "USER").toString();
+                Rol role = Rol.valueOf(decodedToken.getClaims()
+                        .getOrDefault("role", Rol.USER.name()).toString());
 
-                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                List<SimpleGrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
                
 
                 UsernamePasswordAuthenticationToken authentication =

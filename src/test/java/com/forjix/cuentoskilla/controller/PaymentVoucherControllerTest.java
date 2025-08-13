@@ -6,6 +6,7 @@ import com.forjix.cuentoskilla.config.UserDetailsServiceImpl;
 import com.forjix.cuentoskilla.model.Order;
 import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.model.User;
+import com.forjix.cuentoskilla.model.Rol;
 import com.forjix.cuentoskilla.service.MercadoPagoService;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
@@ -54,7 +55,7 @@ public class PaymentVoucherControllerTest {
         User mockUser = new User();
         mockUser.setId(1L);
         mockUser.setEmail("user@example.com");
-        mockUser.setRole("USER");
+        mockUser.setRole(Rol.USER);
         UserDetailsImpl userDetails = new UserDetailsImpl(mockUser);
 
         Order order = new Order();
