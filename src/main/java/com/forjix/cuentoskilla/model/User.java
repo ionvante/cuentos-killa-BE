@@ -25,7 +25,8 @@ public class User {
     private String telefono; // formato Perú: 9 dígitos
     private String documento; // DNI o RUC
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Rol role;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -98,11 +99,11 @@ public class User {
         this.documento = documento;
     }
 
-    public String getRole() {
+    public Rol getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Rol role) {
         this.role = role;
     }
 
