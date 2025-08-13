@@ -1,7 +1,7 @@
 package com.forjix.cuentoskilla.controller;
 
 import com.forjix.cuentoskilla.model.Cuento;
-import com.forjix.cuentoskilla.repository.CuentoRepository;
+import com.forjix.cuentoskilla.service.CuentoService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,22 +13,22 @@ import java.util.List;
 @CrossOrigin
 public class CuentoController {
 
-    private final CuentoRepository cuentoRepository;
+    private final CuentoService cuentoService;
 
-    public CuentoController(CuentoRepository cuentoRepository) {
-        this.cuentoRepository = cuentoRepository;
+    public CuentoController(CuentoService cuentoService) {
+        this.cuentoService = cuentoService;
     }
 
     @GetMapping
     public List<Cuento> getAll() {
         System.out.println("GetMapping getAll() ejecutado");
-        return cuentoRepository.findAll();
+        return cuentoService.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Cuento> getByIdCuentos(@PathVariable Long id) {
         System.out.println("GetMapping getByIdCuentos() ejecutado");
-        return cuentoRepository.findById(id)
+        return cuentoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }  
@@ -36,34 +36,28 @@ public class CuentoController {
     @PostMapping
     public Cuento create(@RequestBody Cuento cuento) {
         System.out.println("PostMapping create() ejecutado");
-        return cuentoRepository.save(cuento);
+        return cuentoService.save(cuento);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Cuento> update(@PathVariable Long id, @RequestBody Cuento cuento) {
         System.out.println("PutMapping update() ejecutado");
-        return cuentoRepository.findById(id)
-                .map(existing -> {
-                    cuento.setId(id);
-                    return ResponseEntity.ok(cuentoRepository.save(cuento));
-                })
+        return cuentoService.update(id, cuento)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}/estado")
     public ResponseEntity<Cuento> updateEstado(@PathVariable Long id, @RequestBody Cuento cuento) {
         System.out.println("PutMapping updateEstado() ejecutado");
-        return cuentoRepository.findById(id)
-                .map(existing -> {
-                    existing.setHabilitado(cuento.isHabilitado());
-                    return ResponseEntity.ok(cuentoRepository.save(existing));
-                })
+        return cuentoService.updateEstado(id, cuento)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         System.out.println("DeleteMapping delete() ejecutado");
-        cuentoRepository.deleteById(id);
+        cuentoService.delete(id);
     }
 }
