@@ -64,7 +64,7 @@ public class OrderController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        if (servUser.findById(user.getId()).get().getRole().equals(Rol.ADMIN.toString())){
+        if (servUser.findById(user.getId()).get().getRole() == Rol.ADMIN){
             return ResponseEntity.ok(service.getOrders(user.getId()));
         }
         return ResponseEntity.ok(service.getOrdersByUser(user.getId()));

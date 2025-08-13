@@ -1,7 +1,6 @@
 package com.forjix.cuentoskilla.service;
 
 import com.forjix.cuentoskilla.model.CartItem;
-import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.repository.CartItemRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +14,8 @@ public class CartService {
         this.cartRepo = cartRepo;
     }
 
-    public List<CartItem> getItems(User user) {
-        return cartRepo.findByUser(user);
+    public List<CartItem> getItems(Long userId) {
+        return cartRepo.findByUser_Id(userId);
     }
 
     public CartItem save(CartItem item) {
