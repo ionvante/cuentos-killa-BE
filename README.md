@@ -24,3 +24,10 @@ Defina la variable de entorno `SENTRY_DSN` con el DSN de su proyecto para habili
 Para que el plugin de Maven pueda subir el código fuente a Sentry debe
 establecer la variable `SENTRY_AUTH_TOKEN` con un token válido.
 Se utiliza `sentry-spring-boot-starter` 7.15.0 que es compatible con Spring Boot 3.3.
+
+## JWT
+
+La clave utilizada para firmar los tokens JWT se configura mediante la propiedad
+`jwt.secret`. En despliegues debe proporcionarse a través de la variable de
+entorno `JWT_SECRET` para mantenerla fuera del código fuente. Para desarrollo
+local se puede definir un valor por defecto en `application-local.yml`.

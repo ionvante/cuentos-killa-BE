@@ -32,6 +32,9 @@ mercadopago:
     pending: https://your-frontend.com/payment/pending
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
 
+jwt:
+  secret: ${JWT_SECRET:change-me}
+
 sentry:
   dsn: ${SENTRY_DSN:}
   send-default-pii: true
