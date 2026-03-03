@@ -8,5 +8,7 @@ public enum OrderStatus {
     VERIFICADO,
     EMPAQUETADO,
     ENVIADO,
-    ENTREGADO
+    ENTREGADO,
+    PAGO_VERIFICADO,
+    PAGO_RECHAZADO
 }

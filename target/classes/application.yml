@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/cuentoskilla
+    username: postgres
+    password: 993753
     hikari:
       data-source-properties:
         prepareThreshold: 0       # evita problema con Supabase Pooler        
@@ -20,6 +20,10 @@ upload:
 storage:
   provider: local
 
+firebase:
+  credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
+  bucket: ${FIREBASE_BUCKET:}
+
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
   back-urls:
@@ -27,6 +31,9 @@ mercadopago:
     failure: https://your-frontend.com/payment/failure
     pending: https://your-frontend.com/payment/pending
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
+
+jwt:
+  secret: ${JWT_SECRET:change-me}
 
 sentry:
   dsn: ${SENTRY_DSN:}

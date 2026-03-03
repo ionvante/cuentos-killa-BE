@@ -8,6 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 
 import java.util.List;
 
@@ -19,10 +23,12 @@ public class CuentoController {
     private static final Logger logger = LoggerFactory.getLogger(CuentoController.class);
     private final CuentoRepository cuentoRepository;
     private final CuentoService cuentoService;
+    private final ObjectMapper objectMapper;
 
-    public CuentoController(CuentoRepository cuentoRepository, CuentoService cuentoService) {
+    public CuentoController(CuentoRepository cuentoRepository, CuentoService cuentoService, ObjectMapper objectMapper) {
         this.cuentoRepository = cuentoRepository;
         this.cuentoService = cuentoService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -39,21 +45,35 @@ public class CuentoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public Cuento create(@RequestBody Cuento cuento) {
-        logger.info("PostMapping create() ejecutado");
-        return cuentoRepository.save(cuento);
+    @PostMapping(consumes = { "multipart/form-data" })
+    public ResponseEntity<Cuento> create(
+            @RequestPart("cuento") String cuentoJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        logger.info("PostMapping create() ejecutado con multipart/form-data");
+        try {
+            Cuento cuento = objectMapper.readValue(cuentoJson, Cuento.class);
+            return ResponseEntity.ok(cuentoService.save(cuento, file));
+        } catch (IOException e) {
+            logger.error("Error parsing cuento JSON", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Cuento> update(@PathVariable Long id, @RequestBody Cuento cuento) {
-        logger.info("PutMapping update() ejecutado");
-        return cuentoRepository.findById(id)
-                .map(existing -> {
-                    cuento.setId(id);
-                    return ResponseEntity.ok(cuentoRepository.save(cuento));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping(value = "/{id}", consumes = { "multipart/form-data" })
+    public ResponseEntity<Cuento> update(
+            @PathVariable Long id,
+            @RequestPart("cuento") String cuentoJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        logger.info("PutMapping update() ejecutado con multipart/form-data");
+        try {
+            Cuento cuento = objectMapper.readValue(cuentoJson, Cuento.class);
+            return cuentoService.update(id, cuento, file)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IOException e) {
+            logger.error("Error parsing cuento JSON", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{id}/estado")

@@ -24,10 +24,12 @@ public class Order {
 
     private BigDecimal total;
 
+    @Column(columnDefinition = "TEXT")
+    private String motivoRechazo;
+
     @ManyToOne
     @JsonIgnore // <-- importante si el ciclo proviene de aquí
     private User user;
-
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
@@ -92,5 +94,13 @@ public class Order {
 
     public void setVouchers(List<Voucher> vouchers) {
         this.vouchers = vouchers;
+    }
+
+    public String getMotivoRechazo() {
+        return motivoRechazo;
+    }
+
+    public void setMotivoRechazo(String motivoRechazo) {
+        this.motivoRechazo = motivoRechazo;
     }
 }
