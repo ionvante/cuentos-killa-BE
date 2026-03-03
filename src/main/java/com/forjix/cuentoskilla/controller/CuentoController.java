@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.io.IOException;
 
@@ -35,6 +37,14 @@ public class CuentoController {
     public List<Cuento> getAll() {
         logger.info("GetMapping getAll() ejecutado");
         return cuentoRepository.findAll();
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<Page<Cuento>> getCuentosPaginados(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        logger.info("GetMapping getCuentosPaginados() ejecutado: page={}, size={}", page, size);
+        return ResponseEntity.ok(cuentoService.obtenerCuentosPaginados(PageRequest.of(page, size)));
     }
 
     @GetMapping("/{id}")

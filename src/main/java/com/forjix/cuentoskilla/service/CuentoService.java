@@ -6,19 +6,26 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class CuentoService {
     private final CuentoRepository repo;
     private final com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService;
 
-    public CuentoService(CuentoRepository repo, com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService) {
+    public CuentoService(CuentoRepository repo,
+            com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService) {
         this.repo = repo;
         this.firebaseStorageService = firebaseStorageService;
     }
 
     public List<Cuento> findAll() {
         return repo.findAll();
+    }
+
+    public Page<Cuento> obtenerCuentosPaginados(Pageable pageable) {
+        return repo.findAll(pageable);
     }
 
     public Optional<Cuento> findById(Long id) {
@@ -29,9 +36,14 @@ public class CuentoService {
         if (file != null && !file.isEmpty()) {
             String fileName = "cuentos/" + java.util.UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             firebaseStorageService.upload(file, fileName);
-            String fileUrl = firebaseStorageService.generateSignedUrl(fileName); // Consider storing just the path if you want to generate URLs on the fly, but for MVP saving URL is easier
-            // Remove token from generated URL to store the public path if bucket is public, or store signed if short-lived.
-            // Using a simple split here assuming standard Firebase URL format or keeping it as is.
+            String fileUrl = firebaseStorageService.generateSignedUrl(fileName); // Consider storing just the path if
+                                                                                 // you want to generate URLs on the
+                                                                                 // fly, but for MVP saving URL is
+                                                                                 // easier
+            // Remove token from generated URL to store the public path if bucket is public,
+            // or store signed if short-lived.
+            // Using a simple split here assuming standard Firebase URL format or keeping it
+            // as is.
             cuento.setImagenUrl(fileUrl);
         }
         return repo.save(cuento);
@@ -42,7 +54,8 @@ public class CuentoService {
                 .map(existing -> {
                     cuento.setId(id);
                     if (file != null && !file.isEmpty()) {
-                        String fileName = "cuentos/" + java.util.UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                        String fileName = "cuentos/" + java.util.UUID.randomUUID().toString() + "_"
+                                + file.getOriginalFilename();
                         firebaseStorageService.upload(file, fileName);
                         String fileUrl = firebaseStorageService.generateSignedUrl(fileName);
                         cuento.setImagenUrl(fileUrl);
