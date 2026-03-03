@@ -11,6 +11,7 @@ import com.forjix.cuentoskilla.service.MercadoPagoService; // Assuming this serv
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.exceptions.MPApiException;
+import com.forjix.cuentoskilla.service.EmailService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,15 +29,17 @@ public class OrderService {
     private final OrderRepository orderRepo;
     private final CuentoRepository cuentoRepo;
     private final UserRepository userRepo;
-    private final MercadoPagoService mercadoPagoService; // Injected MercadoPagoService
+    private final MercadoPagoService mercadoPagoService;
+    private final EmailService emailService;
 
     @Autowired
     public OrderService(OrderRepository orderRepo, CuentoRepository cuentoRepo, UserRepository userRepo,
-            MercadoPagoService mercadoPagoService) {
+            MercadoPagoService mercadoPagoService, EmailService emailService) {
         this.orderRepo = orderRepo;
         this.cuentoRepo = cuentoRepo;
         this.userRepo = userRepo;
         this.mercadoPagoService = mercadoPagoService;
+        this.emailService = emailService;
     }
 
     private void populateOrderItemDetails(OrderItem item) {
@@ -289,6 +292,9 @@ public class OrderService {
             order.setMotivoRechazo(motivo);
         }
         orderRepo.save(order);
+
+        // Notificar al usuario sobre el cambio
+        emailService.enviarNotificacionCambioEstado(order, newStatus);
     }
 
     @Transactional
@@ -301,6 +307,9 @@ public class OrderService {
                 && order.getEstado() != OrderStatus.VERIFICADO) {
             order.setEstado(OrderStatus.PAGADO);
             orderRepo.save(order);
+
+            // Avisar también el éxito del pago webhook
+            emailService.enviarNotificacionCambioEstado(order, OrderStatus.PAGADO);
         }
     }
 

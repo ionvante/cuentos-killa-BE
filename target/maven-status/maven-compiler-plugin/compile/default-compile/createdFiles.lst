@@ -11,6 +11,7 @@ com\forjix\cuentoskilla\model\ConfigCategory.class
 com\forjix\cuentoskilla\model\ConfigItem.class
 com\forjix\cuentoskilla\repository\OrderItemRepository.class
 com\forjix\cuentoskilla\repository\VoucherRepository.class
+com\forjix\cuentoskilla\service\EmailService.class
 com\forjix\cuentoskilla\CuentosKillaApplication.class
 com\forjix\cuentoskilla\config\ConfigItemId.class
 com\forjix\cuentoskilla\model\PaymentVoucher.class
