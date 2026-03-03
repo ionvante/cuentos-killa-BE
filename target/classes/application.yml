@@ -5,11 +5,24 @@ spring:
     password: 993753
     hikari:
       data-source-properties:
-        prepareThreshold: 0       # evita problema con Supabase Pooler        
+        prepareThreshold: 0       # evita problema con Supabase Pooler                
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+cors:
+  allowed-origins:  
+    - http://localhost:4200
+    - https://cuentos-killa-fe.vercel.app
+    - https://cuentos-killa-fe-ionvantes-projects.vercel.app
+    - https://killacuentos.web.app/
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true  
 
   mail:
     host: smtp.gmail.com
@@ -34,7 +47,7 @@ storage:
 
 firebase:
   credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
-  bucket: ${FIREBASE_BUCKET:}
+  bucket: ${FIREBASE_BUCKET:cuentoskillabe.firebasestorage.app}
 
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
@@ -45,10 +58,11 @@ mercadopago:
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
 
 jwt:
-  secret: ${JWT_SECRET:change-me}
+  secret: ${JWT_SECRET:4d3c57bd9dd50faac21b00810e6606c2fe256ba80be9c6f32556ca053a9f5796}
 
 sentry:
   dsn: ${SENTRY_DSN:}
   send-default-pii: true
   logging:
     minimum-event-level: error
+  
