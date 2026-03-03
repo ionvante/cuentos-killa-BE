@@ -1,10 +1,10 @@
 package com.forjix.cuentoskilla.config;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableMethodSecurity
@@ -25,6 +26,11 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtUtil jwtUtil;
+
+    // @Value("${cors.allowed-origins}")
+    // private String allowedOrigins;
+    // @Value("${cors.allowed-methods}")
+    // private String allowedMethods;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtUtil jwtUtil) {
         this.userDetailsService = userDetailsService;
@@ -56,6 +62,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:4200", "https://cuentos-killa-fe.vercel.app","cuentos-killa-fe-ionvantes-projects.vercel.app","https://cuentos-killa-1hoebqd1o-ionvantes-projects.vercel.app/","https://killacuentos.web.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        // config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));        
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Si usas cookies/token
 

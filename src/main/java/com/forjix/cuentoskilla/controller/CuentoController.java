@@ -1,6 +1,7 @@
 package com.forjix.cuentoskilla.controller;
 
 import com.forjix.cuentoskilla.model.Cuento;
+import com.forjix.cuentoskilla.repository.CuentoRepository;
 import com.forjix.cuentoskilla.service.CuentoService;
 
 import org.slf4j.Logger;
@@ -17,7 +18,10 @@ public class CuentoController {
 
     private static final Logger logger = LoggerFactory.getLogger(CuentoController.class);
     private final CuentoRepository cuentoRepository;
-    public CuentoController(CuentoService cuentoService) {
+    private final CuentoService cuentoService;
+
+    public CuentoController(CuentoRepository cuentoRepository, CuentoService cuentoService) {
+        this.cuentoRepository = cuentoRepository;
         this.cuentoService = cuentoService;
     }
 
