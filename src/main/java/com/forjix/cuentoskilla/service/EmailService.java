@@ -11,15 +11,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
 
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
     public void enviarNotificacionCambioEstado(Order order, OrderStatus nuevoEstado) {
-        if (fromEmail == null || fromEmail.isEmpty()) {
-            System.out.println("No se enviará correo porque no hay credenciales configuradas.");
+        if (mailSender == null || fromEmail == null || fromEmail.isEmpty()) {
+            System.out.println("[EmailService] Mail no configurado, omitiendo envío para pedido #" + order.getId());
             return;
         }
 
@@ -39,9 +39,9 @@ public class EmailService {
             mensaje.setText(cuerpo);
 
             mailSender.send(mensaje);
-            System.out.println("Correo de estado enviado a " + order.getUser().getEmail());
+            System.out.println("[EmailService] Correo enviado a " + order.getUser().getEmail());
         } catch (Exception e) {
-            System.err.println("Error enviando correo a " + order.getUser().getEmail() + ": " + e.getMessage());
+            System.err.println("[EmailService] Error enviando correo: " + e.getMessage());
         }
     }
 }

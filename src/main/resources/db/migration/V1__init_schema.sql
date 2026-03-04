@@ -98,6 +98,35 @@ CREATE TABLE IF NOT EXISTS cart_item (
     cantidad    INT DEFAULT 1
 );
 
+-- 8. Categorías de configuración
+CREATE TABLE IF NOT EXISTS config_category (
+    id1         SERIAL PRIMARY KEY,
+    code        VARCHAR(50) NOT NULL UNIQUE,
+    name        VARCHAR(100) NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 9. Ítems de configuración (clave compuesta)
+CREATE TABLE IF NOT EXISTS config_item (
+    id1         INT NOT NULL REFERENCES config_category(id1),
+    id2         INT NOT NULL,
+    label       VARCHAR(200) NOT NULL,
+    data        JSONB NOT NULL DEFAULT '{}',
+    sensitive   BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id1, id2)
+);
+
+-- 10. Vouchers de pago (Firebase Storage)
+CREATE TABLE IF NOT EXISTS payment_vouchers (
+    id            BIGSERIAL PRIMARY KEY,
+    order_id      BIGINT NOT NULL REFERENCES orders(id),
+    filename      VARCHAR(255),
+    mime_type     VARCHAR(100),
+    size          BIGINT DEFAULT 0,
+    firebase_path TEXT,
+    upload_date   TIMESTAMP
+);
+
 -- ============================================================
 -- Datos iniciales: usuario administrador de fábrica
 -- La contraseña '123456' debe estar hasheada con BCrypt.
