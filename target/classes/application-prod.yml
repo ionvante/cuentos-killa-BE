@@ -1,30 +1,72 @@
+# ══════════════════════════════════════════════════════
+#  Perfil de Producción — Railway
+#  Las variables ${...} se configuran en Railway → Variables
+# ══════════════════════════════════════════════════════
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
+      maximum-pool-size: 5       # Railway free: recursos limitados
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
       data-source-properties:
-        prepareThreshold: 0       # evita problema con Supabase Pooler    
+        prepareThreshold: 0      # Evita problema con Supabase/Railway Pooler
+
   jpa:
     hibernate:
-      ddl-auto: validate          # Use 'validate' to ensure schema matches, change to 'update' if needed
-    show-sql: true
+      ddl-auto: validate         # Flyway maneja el esquema, Hibernate solo valida
+    show-sql: false              # Desactivado en prod para no llenar los logs
 
-file:
-  upload-dir: uploads/vouchers
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+cors:
+  allowed-origins:
+    - ${CORS_ALLOWED_ORIGINS:https://killacuentos.web.app}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
 
 firebase:
-  credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
-  bucket: ${FIREBASE_BUCKET:}
+  bucket: ${FIREBASE_BUCKET}
+  # Las credenciales se leen desde FIREBASE_CREDENTIALS_JSON (variable inline)
+  # o desde el archivo indicado en firebase.credentials (desarrollo local)
 
 mercadopago:
-  access-token: YOUR_ACCESS_TOKEN # Existing
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN}
   back-urls:
-    success: https://your-frontend.com/payment/success
-    failure: https://your-frontend.com/payment/failure
-    pending: https://your-frontend.com/payment/pending
-  notification-url: https://your-api-backend.com/api/webhooks/mercadopago
+    success: ${FRONTEND_URL:https://killacuentos.web.app}/payment/success
+    failure: ${FRONTEND_URL:https://killacuentos.web.app}/payment/failure
+    pending: ${FRONTEND_URL:https://killacuentos.web.app}/payment/pending
+  notification-url: ${BACKEND_URL}/api/webhooks/mercadopago
 
 jwt:
   secret: ${JWT_SECRET}
+
+sentry:
+  dsn: ${SENTRY_DSN:}
+  send-default-pii: false        # No enviar datos personales a Sentry en prod
+  environment: production
+
+# Actuator: exponer solo health para el health check de Railway
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

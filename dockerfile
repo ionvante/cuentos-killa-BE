@@ -1,27 +1,41 @@
-# ---------- build stage ----------
-FROM maven:3.9.7-eclipse-temurin-17 AS build
+# ══════════════════════════════════════════
+#   Build Stage — compila el JAR con Maven
+# ══════════════════════════════════════════
+FROM maven:3.9.7-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
-# Copiamos primero el descriptor para aprovechar caché
+# Copiar primero el pom para aprovechar cache de dependencias
 COPY pom.xml .
+RUN mvn -ntp dependency:go-offline -q
 
-# Copiamos el código fuente
+# Copiar código fuente y compilar
 COPY src ./src
+RUN mvn -ntp -DskipTests package -q
 
-# Compilamos (omitimos tests) y generamos el .jar
-RUN mvn -ntp -DskipTests package
-
-
-
-# ---------- runtime stage ----------
-FROM eclipse-temurin:17-jre
+# ══════════════════════════════════════════
+#   Runtime Stage — imagen mínima con JRE
+# ══════════════════════════════════════════
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Copiamos el artefacto resultante desde la etapa build
-COPY --from=build /app/target/*.jar app.jar
+# Crear usuario no-root por seguridad
+RUN addgroup -S spring && adduser -S spring -G spring
 
+# Crear directorio para uploads con permisos correctos
+RUN mkdir -p uploads/vouchers && chown -R spring:spring uploads
+
+# Copiar el JAR resultante
+COPY --from=build --chown=spring:spring /app/target/*.jar app.jar
+
+USER spring
+
+# Puerto que Railway asignará vía $PORT
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar","--spring.profiles.active=prod"]
-# # Health check para verificar que la aplicación está corriendo
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=10s \
-#   CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Opciones JVM optimizadas para contenedores con poca RAM (Railway free: ~512 MB)
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+               -XX:MaxRAMPercentage=75.0 \
+               -XX:+UseG1GC \
+               -Djava.security.egd=file:/dev/./urandom"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=prod"]
