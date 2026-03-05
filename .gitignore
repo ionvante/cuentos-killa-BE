@@ -4,7 +4,6 @@ target/
 
 # Credenciales sensibles
 firebase-adminsdk.json
-firebase-service-account.json
 *.json.key
 
 # Config local
