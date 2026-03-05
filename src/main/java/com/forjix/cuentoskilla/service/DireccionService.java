@@ -27,7 +27,7 @@ public class DireccionService {
 
     public Direccion guardar(DireccionDTO dto) {
         User user = userRepo.findById(dto.getUsuarioId())
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Direccion direccion = new Direccion();
         direccion.setCalle(dto.getCalle());
@@ -46,5 +46,20 @@ public class DireccionService {
 
     public void eliminar(Long id) {
         direccionRepo.deleteById(id);
+    }
+
+    public Direccion actualizar(Long id, DireccionDTO dto) {
+        Direccion direccion = direccionRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
+        direccion.setCalle(dto.getCalle());
+        direccion.setCiudad(dto.getCiudad());
+        direccion.setDepartamento(dto.getDepartamento());
+        direccion.setProvincia(dto.getProvincia());
+        direccion.setDistrito(dto.getDistrito());
+        direccion.setReferencia(dto.getReferencia());
+        direccion.setCodigoPostal(dto.getCodigoPostal());
+        direccion.setEsPrincipal(dto.isEsPrincipal());
+        direccion.setEsFacturacion(dto.isEsFacturacion());
+        return direccionRepo.save(direccion);
     }
 }

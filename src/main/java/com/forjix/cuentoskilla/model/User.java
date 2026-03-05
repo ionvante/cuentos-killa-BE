@@ -23,7 +23,9 @@ public class User {
     private String nombre;
     private String apellido;
     private String telefono; // formato Perú: 9 dígitos
-    private String documento; // DNI o RUC
+    private String documentoTipo; // DNI, CE, PASAPORTE
+    private String documentoNumero;
+    private String documento; // DNI o RUC (Mantener por compatibilidad)
 
     @Enumerated(EnumType.STRING)
     private Rol role;

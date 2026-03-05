@@ -1,53 +1,58 @@
 package com.forjix.cuentoskilla.controller;
 
 import com.forjix.cuentoskilla.config.UserDetailsImpl;
-import com.forjix.cuentoskilla.model.*; // Import all from model
+import com.forjix.cuentoskilla.model.*;
+import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
 import com.forjix.cuentoskilla.service.UserService;
-import com.forjix.cuentoskilla.service.MercadoPagoService; // Added
+import com.forjix.cuentoskilla.service.MercadoPagoService;
 import com.forjix.cuentoskilla.service.PaymentVoucherService;
 import com.forjix.cuentoskilla.service.storage.StorageException;
-import com.mercadopago.resources.preference.Preference; // Added
-import com.mercadopago.exceptions.MPException; // Added
-import com.mercadopago.exceptions.MPApiException; // Added
+import com.mercadopago.resources.preference.Preference;
+import com.mercadopago.exceptions.MPException;
+import com.mercadopago.exceptions.MPApiException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-// import org.apache.http.HttpStatus; // Replaced by Spring's HttpStatus
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal; // Added
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PatchMapping; // Added
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * API de Gestión de Pedidos
+ * 
+ * Rutas: /api/v1/orders
+ * 
+ * Funcionalidad:
+ * - GET: Listar pedidos
+ * - GET /{id}: Obtener detalles de un pedido
+ * - POST: Crear nuevo pedido
+ * - POST /mercadopago/create-preference: Crear preferencia de pago
+ * - PATCH /{id}/status: Actualizar estado
+ * - POST /{id}/voucher: Subir comprobante
+ * - DELETE /{id}: Eliminar pedido
+ * 
+ * Seguridad: Autenticación requerida
+ */
 @RestController
-@RequestMapping("/api/orders")
-@CrossOrigin
+@RequestMapping("/api/v1/orders")
 public class OrderController {
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private final OrderService service;
     private final StorageService storageService;
     private final PaymentVoucherService voucherService;
-    private final MercadoPagoService mercadoPagoService; // Added
-    private final UserService servUser; // Added
+    private final MercadoPagoService mercadoPagoService;
+    private final UserService servUser;
 
     public OrderController(OrderService service, StorageService storageService,
             MercadoPagoService mercadoPagoService, UserService servUser,
@@ -55,318 +60,192 @@ public class OrderController {
         this.service = service;
         this.storageService = storageService;
         this.voucherService = voucherService;
-        this.mercadoPagoService = mercadoPagoService; // Added
-        this.servUser = servUser; // Added
+        this.mercadoPagoService = mercadoPagoService;
+        this.servUser = servUser;
+    }
+
+    /**
+     * Extrae UserDetailsImpl del contexto de seguridad actual
+     */
+    private UserDetailsImpl getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            return (UserDetailsImpl) authentication.getPrincipal();
+        }
+        throw new IllegalStateException("Usuario no autenticado o UserDetailsImpl no disponible");
     }
 
     @GetMapping
-    public ResponseEntity<List<PedidoDTO>> getOrder(@AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<PedidoDTO>>> getOrders() {
+        UserDetailsImpl user = getCurrentUser();
+        logger.info("GET /api/v1/orders - Usuario: {}", user.getId());
         if (servUser.findById(user.getId()).get().getRole() == Rol.ADMIN) {
-            return ResponseEntity.ok(service.getOrders(user.getId()));
+            return ResponseEntity.ok(ApiResponse.success(service.getOrders(user.getId()), "Pedidos obtenidos"));
         }
-        return ResponseEntity.ok(service.getOrdersByUser(user.getId()));
+        return ResponseEntity.ok(ApiResponse.success(service.getOrdersByUser(user.getId()), "Pedidos obtenidos"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Order>> getOrderById(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
+        logger.info("GET /api/v1/orders/{}", id);
         Order order = service.getOrderByIdAndUser(id, user.getId());
         if (order == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
-        logger.info("getOrder getOrderByIdAndUser() ejecutado");
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(ApiResponse.success(order, "Pedido obtenido"));
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<?> getOrderStatus(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getOrderStatus(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
         try {
             OrderStatus status = service.getOrderStatus(id, user.getId());
-            return ResponseEntity.ok(Map.of("estado", status.toString()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.ok(ApiResponse.success(Map.of("estado", status.toString()), "Estado obtenido"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateOrderStatus(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateOrderStatus(
             @PathVariable long id,
-            @RequestBody Map<String, String> payload,
-            @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+            @RequestBody Map<String, String> payload) {
+        UserDetailsImpl user = getCurrentUser();
         try {
             String newStatusStr = payload.get("estado");
-            String reason = payload.get("motivo");
             if (newStatusStr == null || newStatusStr.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "El campo 'estado' es requerido."));
+                return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_INPUT", "Campo 'estado' requerido"));
             }
             OrderStatus newStatus = OrderStatus.valueOf(newStatusStr);
-            service.updateOrderStatus(id, newStatus, reason, user.getId());
-            return ResponseEntity.ok(Map.of("message", "Estado del pedido actualizado exitosamente."));
+            service.updateOrderStatus(id, newStatus, payload.get("motivo"), user.getId());
+            return ResponseEntity.ok(ApiResponse.success(Map.of("message", "Estado actualizado"), "Actualizado"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Estado inválido: " + payload.get("estado")));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_STATUS", "Estado inválido"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
     }
 
     @PostMapping("/{id}/pay")
-    public ResponseEntity<?> initiatePayment(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> initiatePayment(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
         try {
-            // Assuming OrderService.initiatePayment checks ownership and handles payment
-            // logic
-            // This might return a payment URL or status
             String paymentResponse = service.initiatePayment(id, user.getId());
-            return ResponseEntity.ok(Map.of("paymentResponse", paymentResponse));
-        } catch (MPApiException e) {
-            logger.error("MPApiException while initiating payment for order ID {}: {} - Response: {}", id,
-                    e.getMessage(), e.getApiResponse() != null ? e.getApiResponse().getContent() : "N/A", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error with Mercado Pago API: " + e.getMessage()));
-        } catch (MPException e) {
-            logger.error("MPException while initiating payment for order ID {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error with Mercado Pago SDK: " + e.getMessage()));
+            return ResponseEntity.ok(ApiResponse.success(Map.of("paymentResponse", paymentResponse), "Pago iniciado"));
         } catch (Exception e) {
-            logger.error("Error initiating payment for order {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error initiating payment: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("PAYMENT_ERROR", "Error al procesar"));
         }
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody PedidoDTO pedidoDTO) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> create(@RequestBody PedidoDTO pedidoDTO) {
+        UserDetailsImpl user = getCurrentUser();
         try {
-
             Order savedOrder = service.save(pedidoDTO, servUser.findById(pedidoDTO.getUserId()).get());
-            logger.info("Order saved with ID: {}", savedOrder.getId());
-            return ResponseEntity.ok(Map.of("id", savedOrder.getId()));
-        } catch (Exception ex) {
-            // Using Spring's HttpStatus here
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error al registrar pedido: " + ex.getMessage()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", savedOrder.getId()), "Creado"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("CREATION_ERROR", "Error al crear"));
         }
     }
 
-    @PostMapping("/mercadopago/create-preference") // New Endpoint
-    public ResponseEntity<?> createPaymentPreference(@RequestBody PedidoDTO pedidoDTO,
-            @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        // Ensure the PedidoDTO's user matches the authenticated user, or set it.
-        // This depends on how PedidoDTO is designed and if it contains user info.
-        // For now, assuming service.save() handles user association correctly or
-        // PedidoDTO is already user-aware.
-        // If pedidoDTO.getCorreoUsuario() is used, ensure it matches
-        // servUser.findById(user.getId()).getEmail() or similar.
-
+    @PostMapping("/mercadopago/create-preference")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createPaymentPreference(
+            @RequestBody PedidoDTO pedidoDTO) {
+        UserDetailsImpl user = getCurrentUser();
         Order savedOrder;
         try {
-            logger.info("Saving order before creating Mercado Pago preference for user: {}",
-                    servUser.findById(user.getId()).get().getEmail());
-            // Pass the authenticated user object or its ID to the service.save method
-            savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get()); // Modified to pass user
-            logger.info("Order saved with ID: {}. Attempting to create Mercado Pago preference.", savedOrder.getId());
+            savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get());
         } catch (Exception e) {
-            logger.error("Error saving order before creating Mercado Pago preference for user {}: {}",
-                    servUser.findById(user.getId()).get().getEmail(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error saving order: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("ORDER_CREATION_ERROR", "Error al crear"));
         }
-
         try {
-            // Pass user details if needed by mercadoPagoService, or rely on savedOrder's
-            // user association
-            Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId()); // Potentially
-                                                                                                               // pass
-                                                                                                               // user
+            Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId());
             if (preference != null && preference.getInitPoint() != null) {
-                logger.info("Mercado Pago preference created successfully for order ID: {}. Init point: {}",
-                        savedOrder.getId(), preference.getInitPoint());
-                return ResponseEntity.ok(Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()));
-            } else {
-                logger.error("Mercado Pago preference or init point was null for order ID: {}", savedOrder.getId());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Failed to retrieve Mercado Pago init point."));
+                return ResponseEntity.ok(ApiResponse.success(Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()), "Preferencia creada"));
             }
-        } catch (MPApiException e) {
-            logger.error("MPApiException while creating Mercado Pago preference for order ID {}: {} - Response: {}",
-                    savedOrder.getId(), e.getMessage(),
-                    e.getApiResponse() != null ? e.getApiResponse().getContent() : "N/A", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error with Mercado Pago API: " + e.getMessage()));
-        } catch (MPException e) {
-            logger.error("MPException while creating Mercado Pago preference for order ID {}: {}", savedOrder.getId(),
-                    e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error with Mercado Pago SDK: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("PREFERENCE_ERROR", "Error al crear preferencia"));
         } catch (Exception e) {
-            logger.error("Unexpected error creating Mercado Pago preference for order ID {}: {}", savedOrder.getId(),
-                    e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Unexpected error creating preference: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("MERCADO_PAGO_ERROR", "Error con Mercado Pago"));
         }
     }
 
     @PostMapping("/{id}/confirmar-pago-mercadopago")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> confirmarPagoMercadoPago(@PathVariable long id,
-            @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> confirmarPagoMercadoPago(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
         try {
             Order order = service.getOrderByIdAndUser(id, user.getId());
-            // Si el webhook ya procesó el pago:
             if (order.getEstado() == OrderStatus.PAGADO || order.getEstado() == OrderStatus.VERIFICADO) {
-                return ResponseEntity.ok(Map.of("status", "success"));
+                return ResponseEntity.ok(ApiResponse.success(Map.of("status", "success"), "Confirmado"));
             }
-            // Si el webhook aún no llega o hubo demora:
-            return ResponseEntity.ok(Map.of("status", "pending"));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(ApiResponse.success(Map.of("status", "pending"), "Pendiente"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "No encontrado"));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id, @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        // Add user check in service.delete(id, userId)
-        boolean deleted = service.deleteOrderByIdAndUser(id, user.getId());
-        if (deleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            // Could be not found or not authorized
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
+        try {
+            boolean deleted = service.deleteOrderByIdAndUser(id, user.getId());
+            if (deleted) {
+                return ResponseEntity.ok(ApiResponse.success(null, "Eliminado"));
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("ACCESS_DENIED", "Sin permiso"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("DELETION_ERROR", "Error"));
         }
     }
 
     @PostMapping("/{id}/voucher")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> uploadVoucher(
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadVoucher(
             @PathVariable("id") long orderId,
             @RequestPart("file") MultipartFile file,
             @RequestParam(name = "dispositivo", required = false, defaultValue = "Desconocido") String dispositivo,
-            HttpServletRequest request, @AuthenticationPrincipal UserDetailsImpl user) {
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+            HttpServletRequest request) {
+        UserDetailsImpl user = getCurrentUser();
         if (file.isEmpty()) {
-            logger.warn("Upload attempt with empty file for orderId: {} by user {}", orderId, user.getId());
-            return ResponseEntity.badRequest().body(Map.of("error", "Cannot upload an empty file."));
+            return ResponseEntity.badRequest().body(ApiResponse.error("EMPTY_FILE", "Archivo vacío"));
         }
-
         try {
-            String ip = request.getRemoteAddr();
-            String originalFileName = file.getOriginalFilename();
-            String contentType = file.getContentType();
-            long fileSize = file.getSize();
-
-            // Basic validation for orderId before calling service
-            if (orderId == 0) { // UUID can be null
-                logger.warn("Null orderId provided by user {}", user.getId());
-                return ResponseEntity.badRequest().body(Map.of("error", "Valid Order ID is required."));
-            }
-
-            logger.info("Attempting to upload voucher for orderId: {}, fileName: {}, ip: {}, device: {} by user {}",
-                    orderId, originalFileName, ip, dispositivo, user.getId());
-
             Order order = service.getOrderByIdAndUser(orderId, user.getId());
-            if (order.getEstado() == OrderStatus.PAGADO) {
-                logger.warn("Voucher upload attempt for paid order {} by user {}", orderId, user.getId());
-                return ResponseEntity.badRequest().body(Map.of("error", "Order already paid."));
+            if (order.getEstado() == OrderStatus.PAGADO || order.getEstado() == OrderStatus.VERIFICADO) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
-            if (order.getEstado() == OrderStatus.VERIFICADO) {
-                logger.warn("Voucher upload attempt for verified order {} by user {}", orderId, user.getId());
-                return ResponseEntity.badRequest().body(Map.of("error", "Order already verified."));
-            }
-
-            // storageService.store should also verify user ownership of the orderId
-            Voucher voucher = storageService.store(file, orderId, originalFileName, contentType, ip, dispositivo,
-                    fileSize);
-
-            logger.info("Voucher uploaded successfully for orderId: {}. Voucher ID: {}, FileName: {} by user {}",
-                    orderId, voucher.getId(), voucher.getNombreArchivo(), user.getId());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", voucher.getId(),
-                    "fileUrl", voucher.getFilePath(),
-                    "status", voucher.getOrder().getEstado().toString()));
-        } catch (StorageException e) {
-            logger.error("StorageException for orderId {} by user {}: {}", orderId, user.getId(), e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Storage error: " + e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            logger.error("IllegalArgumentException for orderId {} by user {}: {}", orderId, user.getId(),
-                    e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid input: " + e.getMessage()));
-        } catch (Exception e) { // Catch more specific security/ownership exceptions if defined
-            logger.error("Unexpected error during voucher upload for orderId {} by user {}: {}", orderId, user.getId(),
-                    e.getMessage(), e);
-            if (e.getMessage().toLowerCase().contains("not authorized")
-                    || e.getMessage().toLowerCase().contains("access denied")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", "Access Denied: " + e.getMessage()));
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+            Voucher voucher = storageService.store(file, orderId, file.getOriginalFilename(), file.getContentType(), request.getRemoteAddr(), dispositivo, file.getSize());
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", voucher.getId(), "fileUrl", voucher.getFilePath()), "Subido"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("STORAGE_ERROR", "Error"));
         }
     }
 
     @PostMapping("/{id}/voucherF")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> uploadVoucherFirebase(
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadVoucherFirebase(
             @PathVariable("id") Long orderId,
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal UserDetailsImpl user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+            @RequestParam("file") MultipartFile file) {
+        UserDetailsImpl user = getCurrentUser();
         try {
             Order order = service.getOrderByIdAndUser(orderId, user.getId());
             if (order.getEstado() == OrderStatus.PAGADO) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Order already paid"));
+                return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
             PaymentVoucher voucher = voucherService.upload(orderId, file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", voucher.getId(),
-                    "filename", voucher.getFilename(),
-                    "mimeType", voucher.getMimeType(),
-                    "size", voucher.getSize(),
-                    "firebasePath", voucher.getFirebasePath(),
-                    "uploadDate", voucher.getUploadDate().toString()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (StorageException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", voucher.getId(), "filename", voucher.getFilename()), "Subido"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("INTERNAL_ERROR", "Error"));
         }
     }
 }
