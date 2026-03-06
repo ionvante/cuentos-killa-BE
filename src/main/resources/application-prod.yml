@@ -72,4 +72,7 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never
+      show-details: always
+  health:
+    mail:
+      enabled: false
