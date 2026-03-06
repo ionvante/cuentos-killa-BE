@@ -3,6 +3,9 @@
 #  Las variables ${...} se configuran en Railway → Variables
 # ══════════════════════════════════════════════════════
 
+server:
+  port: ${PORT:8080}
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -69,4 +72,7 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never
+      show-details: always
+  health:
+    mail:
+      enabled: false
