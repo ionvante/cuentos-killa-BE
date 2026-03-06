@@ -103,7 +103,8 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "https://cuentos-killa-fe.vercel.app",
                 "https://cuentos-killa-fe-ionvantes-projects.vercel.app",
-                "https://killacuentos.web.app"));
+                "https://killacuentos.web.app",
+                "https://cuentos-killa-fe-production.up.railway.app"));
 
         // Métodos HTTP permitidos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
