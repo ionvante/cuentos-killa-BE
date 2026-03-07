@@ -4,6 +4,7 @@ target/
 
 # Credenciales sensibles
 firebase-adminsdk.json
+firebase-service-account.json
 *.json.key
 
 # Config local
@@ -15,3 +16,4 @@ uploads/
 # Logs de build/error
 build.log
 error.txt
+firebase-service-account.json

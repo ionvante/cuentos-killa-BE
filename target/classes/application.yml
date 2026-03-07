@@ -30,6 +30,19 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    repair: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:cuentoskilla@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:nfug jaiv ythi jfbe}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 cors:
   allowed-origins:  
     - http://localhost:4200
@@ -39,18 +52,6 @@ cors:
   allowed-methods: GET,POST,PUT,DELETE,OPTIONS
   allowed-headers: "*"
   allow-credentials: true  
-
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
 file:
   upload-dir: uploads/vouchers
@@ -62,8 +63,8 @@ storage:
   provider: local
 
 firebase:
-  credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
-  bucket: ${FIREBASE_BUCKET:cuentoskillabe.firebasestorage.app}
+  credentials: ${FIREBASE_CREDENTIALS:firebase-service-account.json}
+  bucket: ${FIREBASE_BUCKET:cuentoskilla-f84ff.firebasestorage.app}
 
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
@@ -82,3 +83,5 @@ sentry:
   logging:
     minimum-event-level: error
   
+frontend:
+  url: ${FRONTEND_URL:https://killacuentos.web.app}

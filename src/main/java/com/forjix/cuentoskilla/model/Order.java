@@ -80,6 +80,11 @@ public class Order {
         this.user = user;
     }
 
+    // Método para exponer el ID en el JSON de respuesta sin romper el ciclo
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     public List<OrderItem> getItems() {
         return items;
     }

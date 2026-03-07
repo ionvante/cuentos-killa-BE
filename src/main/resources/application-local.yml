@@ -25,12 +25,24 @@ spring:
         order_inserts: true
         order_updates: true
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:cuentoskilla@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:ALCuentos162902Killa}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 file:
   upload-dir: ./uploads/vouchers
 
 firebase:
-  credentials: ${FIREBASE_CREDENTIALS:firebase-adminsdk.json}
-  bucket: ${FIREBASE_BUCKET:}
+  credentials: ${FIREBASE_CREDENTIALS:firebase-service-account.json}
+  bucket: ${FIREBASE_BUCKET:cuentoskilla-f84ff.firebasestorage.app}
 
 mercadopago:
   access-token: YOUR_ACCESS_TOKEN # Existing
@@ -42,3 +54,6 @@ mercadopago:
 
 jwt:
   secret: ${JWT_SECRET:local-secret}
+
+frontend:
+  url: http://localhost:4200

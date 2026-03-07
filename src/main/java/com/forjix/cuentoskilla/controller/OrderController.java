@@ -94,7 +94,7 @@ public class OrderController {
         Order order = service.getOrderByIdAndUser(id, user.getId());
         if (order == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
+                    .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
         return ResponseEntity.ok(ApiResponse.success(order, "Pedido obtenido"));
     }
@@ -107,7 +107,8 @@ public class OrderController {
             OrderStatus status = service.getOrderStatus(id, user.getId());
             return ResponseEntity.ok(ApiResponse.success(Map.of("estado", status.toString()), "Estado obtenido"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
     }
 
@@ -128,7 +129,8 @@ public class OrderController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_STATUS", "Estado inválido"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
         }
     }
 
@@ -140,7 +142,8 @@ public class OrderController {
             String paymentResponse = service.initiatePayment(id, user.getId());
             return ResponseEntity.ok(ApiResponse.success(Map.of("paymentResponse", paymentResponse), "Pago iniciado"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("PAYMENT_ERROR", "Error al procesar"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("PAYMENT_ERROR", "Error al procesar"));
         }
     }
 
@@ -150,9 +153,11 @@ public class OrderController {
         UserDetailsImpl user = getCurrentUser();
         try {
             Order savedOrder = service.save(pedidoDTO, servUser.findById(pedidoDTO.getUserId()).get());
-            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", savedOrder.getId()), "Creado"));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success(Map.of("id", savedOrder.getId()), "Creado"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("CREATION_ERROR", "Error al crear"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("CREATION_ERROR", "Error al crear"));
         }
     }
 
@@ -165,16 +170,21 @@ public class OrderController {
         try {
             savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("ORDER_CREATION_ERROR", "Error al crear"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("ORDER_CREATION_ERROR", "Error al crear"));
         }
         try {
             Preference preference = mercadoPagoService.createPaymentPreference(pedidoDTO, savedOrder.getId());
             if (preference != null && preference.getInitPoint() != null) {
-                return ResponseEntity.ok(ApiResponse.success(Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()), "Preferencia creada"));
+                return ResponseEntity.ok(ApiResponse.success(
+                        Map.of("initPoint", preference.getInitPoint(), "orderId", savedOrder.getId()),
+                        "Preferencia creada"));
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("PREFERENCE_ERROR", "Error al crear preferencia"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("PREFERENCE_ERROR", "Error al crear preferencia"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("MERCADO_PAGO_ERROR", "Error con Mercado Pago"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("MERCADO_PAGO_ERROR", "Error con Mercado Pago"));
         }
     }
 
@@ -189,7 +199,8 @@ public class OrderController {
             }
             return ResponseEntity.ok(ApiResponse.success(Map.of("status", "pending"), "Pendiente"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("ORDER_NOT_FOUND", "No encontrado"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("ORDER_NOT_FOUND", "No encontrado"));
         }
     }
 
@@ -204,7 +215,8 @@ public class OrderController {
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("ACCESS_DENIED", "Sin permiso"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("DELETION_ERROR", "Error"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("DELETION_ERROR", "Error"));
         }
     }
 
@@ -219,15 +231,26 @@ public class OrderController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("EMPTY_FILE", "Archivo vacío"));
         }
+
+        // Validación de Seguridad: Solo permitir imágenes
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_FILE_TYPE",
+                    "Por razones de seguridad, solo se permiten subir imágenes (jpg, png, etc)."));
+        }
+
         try {
             Order order = service.getOrderByIdAndUser(orderId, user.getId());
             if (order.getEstado() == OrderStatus.PAGADO || order.getEstado() == OrderStatus.VERIFICADO) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
-            Voucher voucher = storageService.store(file, orderId, file.getOriginalFilename(), file.getContentType(), request.getRemoteAddr(), dispositivo, file.getSize());
-            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", voucher.getId(), "fileUrl", voucher.getFilePath()), "Subido"));
+            Voucher voucher = storageService.store(file, orderId, file.getOriginalFilename(), file.getContentType(),
+                    request.getRemoteAddr(), dispositivo, file.getSize());
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.success(Map.of("id", voucher.getId(), "fileUrl", voucher.getFilePath()), "Subido"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("STORAGE_ERROR", "Error"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("STORAGE_ERROR", "Error"));
         }
     }
 
@@ -237,15 +260,25 @@ public class OrderController {
             @PathVariable("id") Long orderId,
             @RequestParam("file") MultipartFile file) {
         UserDetailsImpl user = getCurrentUser();
+
+        // Validación de Seguridad: Solo permitir imágenes
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_FILE_TYPE",
+                    "Por razones de seguridad, solo se permiten subir imágenes (jpg, png, etc)."));
+        }
+
         try {
             Order order = service.getOrderByIdAndUser(orderId, user.getId());
             if (order.getEstado() == OrderStatus.PAGADO) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
             PaymentVoucher voucher = voucherService.upload(orderId, file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(Map.of("id", voucher.getId(), "filename", voucher.getFilename()), "Subido"));
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.success(Map.of("id", voucher.getId(), "filename", voucher.getFilename()), "Subido"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("INTERNAL_ERROR", "Error"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("INTERNAL_ERROR", "Error"));
         }
     }
 }
