@@ -5,6 +5,7 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.model.DTOs.UserProfileDTO;
+import com.forjix.cuentoskilla.model.DTOs.UserResponseDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.UserService;
 
@@ -81,14 +82,11 @@ public class UserController {
      */
     @GetMapping("/perfil")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<User>> getPerfil() {
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getPerfil() {
         UserDetailsImpl user = getCurrentUser();
         logger.info("GET /api/v1/users/perfil - Obteniendo perfil de usuario: {}", user.getId());
         return userService.findById(user.getId())
-                .map(u -> {
-                    applyDocumentoCompatibility(u);
-                    return ResponseEntity.ok(ApiResponse.success(u, "Perfil obtenido exitosamente"));
-                })
+                .map(u -> ResponseEntity.ok(ApiResponse.success(UserResponseDTO.from(u), "Perfil obtenido exitosamente")))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("USER_NOT_FOUND", "Usuario no encontrado")));
     }

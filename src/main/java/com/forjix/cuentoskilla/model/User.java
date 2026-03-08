@@ -93,7 +93,6 @@ public class User {
         this.telefono = telefono;
     }
 
-
     public String getDocumentoTipo() {
         return documentoTipo;
     }
