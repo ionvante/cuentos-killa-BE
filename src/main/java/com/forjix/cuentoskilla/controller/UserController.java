@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * API de Gestión de Usuarios
@@ -80,11 +81,11 @@ public class UserController {
      */
     @GetMapping("/perfil")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<User>> getPerfil() {
+    public ResponseEntity<ApiResponse<Map<String, User>>> getPerfil() {
         UserDetailsImpl user = getCurrentUser();
         logger.info("GET /api/v1/users/perfil - Obteniendo perfil de usuario: {}", user.getId());
         return userService.findById(user.getId())
-                .map(u -> ResponseEntity.ok(ApiResponse.success(u, "Perfil obtenido exitosamente")))
+                .map(u -> ResponseEntity.ok(ApiResponse.success(Map.of("user", u), "Perfil obtenido exitosamente")))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("USER_NOT_FOUND", "Usuario no encontrado")));
     }

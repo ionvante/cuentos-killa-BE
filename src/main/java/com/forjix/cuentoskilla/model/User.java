@@ -23,7 +23,10 @@ public class User {
     private String nombre;
     private String apellido;
     private String telefono; // formato Perú: 9 dígitos
+    @Column(name = "documento_tipo")
     private String documentoTipo; // DNI, CE, PASAPORTE
+
+    @Column(name = "documento_numero")
     private String documentoNumero;
     private String documento; // DNI o RUC (Mantener por compatibilidad)
 
@@ -99,6 +102,22 @@ public class User {
 
     public void setDocumento(String documento) {
         this.documento = documento;
+    }
+
+    public String getDocumentoTipo() {
+        return documentoTipo;
+    }
+
+    public void setDocumentoTipo(String documentoTipo) {
+        this.documentoTipo = documentoTipo;
+    }
+
+    public String getDocumentoNumero() {
+        return documentoNumero;
+    }
+
+    public void setDocumentoNumero(String documentoNumero) {
+        this.documentoNumero = documentoNumero;
     }
 
     public Rol getRole() {
