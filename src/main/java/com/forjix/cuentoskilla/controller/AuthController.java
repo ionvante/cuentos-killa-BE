@@ -7,6 +7,7 @@ import com.forjix.cuentoskilla.model.DTOs.LoginRequest;
 import com.forjix.cuentoskilla.model.Rol;
 import com.forjix.cuentoskilla.model.DTOs.LoginResponse;
 import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
+import com.forjix.cuentoskilla.model.DTOs.UserResponseDTO;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import jakarta.validation.Valid;
 
@@ -128,15 +129,13 @@ public class AuthController {
             User user = userRepo.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
             
-            // Limpiar datos sensibles antes de retornar
-            user.setPassword(null);
-            user.setOrders(null);
-            
+            UserResponseDTO userResponse = UserResponseDTO.from(user);
+
             log.info("Login exitoso para usuario: {}", request.getEmail());
-            
+
             return ResponseEntity
                 .ok(ApiResponse.success(
-                    new LoginResponse(token, user),
+                    new LoginResponse(token, userResponse),
                     "Login exitoso"
                 ));
                 
