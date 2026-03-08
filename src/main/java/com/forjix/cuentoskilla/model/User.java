@@ -93,6 +93,23 @@ public class User {
         this.telefono = telefono;
     }
 
+
+    public String getDocumentoTipo() {
+        return documentoTipo;
+    }
+
+    public void setDocumentoTipo(String documentoTipo) {
+        this.documentoTipo = documentoTipo;
+    }
+
+    public String getDocumentoNumero() {
+        return documentoNumero;
+    }
+
+    public void setDocumentoNumero(String documentoNumero) {
+        this.documentoNumero = documentoNumero;
+    }
+
     public String getDocumento() {
         return documento;
     }
