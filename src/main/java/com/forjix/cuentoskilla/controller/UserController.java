@@ -5,6 +5,7 @@ import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.model.DTOs.UserProfileDTO;
+import com.forjix.cuentoskilla.model.DTOs.UserResponseDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.UserService;
 
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -81,11 +83,11 @@ public class UserController {
      */
     @GetMapping("/perfil")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Map<String, User>>> getPerfil() {
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getPerfil() {
         UserDetailsImpl user = getCurrentUser();
         logger.info("GET /api/v1/users/perfil - Obteniendo perfil de usuario: {}", user.getId());
         return userService.findById(user.getId())
-                .map(u -> ResponseEntity.ok(ApiResponse.success(Map.of("user", u), "Perfil obtenido exitosamente")))
+                .map(u -> ResponseEntity.ok(ApiResponse.success(UserResponseDTO.from(u), "Perfil obtenido exitosamente")))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("USER_NOT_FOUND", "Usuario no encontrado")));
     }
@@ -109,7 +111,16 @@ public class UserController {
             existingUser.setNombre(dto.getNombre());
             existingUser.setApellido(dto.getApellido());
             existingUser.setTelefono(dto.getTelefono());
-            existingUser.setDocumento(dto.getDocumento());
+            existingUser.setDocumentoTipo(dto.getDocumentoTipo());
+            existingUser.setDocumentoNumero(dto.getDocumentoNumero());
+
+            // Compatibilidad legacy: sincronizar documento <-> documentoNumero durante la migración del FE
+            if (StringUtils.hasText(dto.getDocumentoNumero())) {
+                existingUser.setDocumento(dto.getDocumentoNumero());
+            } else if (StringUtils.hasText(dto.getDocumento())) {
+                existingUser.setDocumento(dto.getDocumento());
+                existingUser.setDocumentoNumero(dto.getDocumento());
+            }
             
             User updated = userService.save(existingUser);
             logger.info("Perfil de usuario {} actualizado exitosamente", user.getId());
@@ -135,4 +146,15 @@ public class UserController {
                 .map(users -> ResponseEntity.ok(ApiResponse.success(users, "Usuarios obtenidos exitosamente")))
                 .orElseGet(() -> ResponseEntity.ok(ApiResponse.success(List.of(), "No hay usuarios")));
     }
+
+    private void applyDocumentoCompatibility(User user) {
+        // Mantener ambos campos en la respuesta de perfil mientras FE migra
+        if (!StringUtils.hasText(user.getDocumentoNumero()) && StringUtils.hasText(user.getDocumento())) {
+            user.setDocumentoNumero(user.getDocumento());
+        }
+        if (!StringUtils.hasText(user.getDocumento()) && StringUtils.hasText(user.getDocumentoNumero())) {
+            user.setDocumento(user.getDocumentoNumero());
+        }
+    }
+
 }
