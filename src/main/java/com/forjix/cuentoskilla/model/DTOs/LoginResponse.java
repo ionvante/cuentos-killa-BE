@@ -1,19 +1,14 @@
 package com.forjix.cuentoskilla.model.DTOs;
 
-import com.forjix.cuentoskilla.model.User;
-
 public class LoginResponse {
     private String token;
-    private User user;
+    private UserResponseDTO user;
 
-
-
-    public LoginResponse(String token, User user) {
+    public LoginResponse(String token, UserResponseDTO user) {
         this.token = token;
         this.user = user;
     }
 
-    // Getters y setters
     public String getToken() {
         return token;
     }
@@ -22,11 +17,11 @@ public class LoginResponse {
         this.token = token;
     }
 
-    public User getUser() {
+    public UserResponseDTO getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(UserResponseDTO user) {
         this.user = user;
-    }    
+    }
 }
