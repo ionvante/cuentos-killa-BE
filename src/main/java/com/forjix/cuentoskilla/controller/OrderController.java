@@ -7,6 +7,7 @@ import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.StorageService;
 import com.forjix.cuentoskilla.service.UserService;
+import com.forjix.cuentoskilla.service.BoletaService;
 import com.forjix.cuentoskilla.service.MercadoPagoService;
 import com.forjix.cuentoskilla.service.PaymentVoucherService;
 import com.forjix.cuentoskilla.service.storage.StorageException;
@@ -53,15 +54,17 @@ public class OrderController {
     private final PaymentVoucherService voucherService;
     private final MercadoPagoService mercadoPagoService;
     private final UserService servUser;
+    private final BoletaService boletaService;
 
     public OrderController(OrderService service, StorageService storageService,
             MercadoPagoService mercadoPagoService, UserService servUser,
-            PaymentVoucherService voucherService) {
+            PaymentVoucherService voucherService, BoletaService boletaService) {
         this.service = service;
         this.storageService = storageService;
         this.voucherService = voucherService;
         this.mercadoPagoService = mercadoPagoService;
         this.servUser = servUser;
+        this.boletaService = boletaService;
     }
 
     /**
@@ -129,8 +132,12 @@ public class OrderController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_STATUS", "Estado inválido"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("ORDER_NOT_FOUND", "Pedido no encontrado"));
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+            logger.error("Error al actualizar el estado de la orden {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("INTERNAL_ERROR",
+                            "Error de servidor al procesar el estado: " + sw.toString()));
         }
     }
 
@@ -279,6 +286,31 @@ public class OrderController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("INTERNAL_ERROR", "Error"));
+        }
+    }
+
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadBoletaPdf(@PathVariable long id) {
+        UserDetailsImpl user = getCurrentUser();
+        boolean isAdmin = user.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        try {
+            BoletaService.BoletaArchivo archivo = boletaService.obtenerBoletaParaDescarga(id, user.getId(), isAdmin);
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(
+                    archivo.filePath().toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"" + archivo.filePath().getFileName().toString() + "\"")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } catch (java.util.NoSuchElementException | IllegalStateException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

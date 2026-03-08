@@ -13,10 +13,12 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\config\WebMvcConfig.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\AdminController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\AuthController.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\BoletaController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\CartController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\ConfigController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\CuentoController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\DireccionController.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\FacturacionConfigController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\MaestroController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\MercadoPagoWebhookController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\OrderController.java
@@ -28,6 +30,7 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\CuentosKillaApplication.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\exception\ApiError.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\exception\RestExceptionHandler.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\Boleta.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\CartItem.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\ConfigCategory.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\ConfigItem.java
@@ -37,6 +40,8 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\Distrito.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\ApiResponse.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\DireccionDTO.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\FacturacionParametroRequest.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\FacturacionParametroResponse.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\LoginRequest.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\LoginResponse.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\DTOs\PedidoDTO.java
@@ -54,6 +59,7 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\Rol.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\User.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\Voucher.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\BoletaRepository.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\CartItemRepository.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\ConfigCategoryRepository.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\ConfigItemRepository.java
@@ -69,10 +75,12 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\StatsRepository.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\UserRepository.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\repository\VoucherRepository.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\BoletaService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\CartService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\CuentoService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\DireccionService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\EmailService.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\FacturacionConfigService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\MaestroService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\MercadoPagoService.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\service\OrderService.java

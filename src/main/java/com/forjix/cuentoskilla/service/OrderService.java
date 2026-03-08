@@ -7,11 +7,8 @@ import com.forjix.cuentoskilla.model.DTOs.PedidoItemDTO;
 import com.forjix.cuentoskilla.repository.CuentoRepository;
 import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.UserRepository;
-import com.forjix.cuentoskilla.service.MercadoPagoService; // Assuming this service exists for payment
 import com.mercadopago.exceptions.MPException;
-import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.exceptions.MPApiException;
-import com.forjix.cuentoskilla.service.EmailService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,8 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,15 +26,17 @@ public class OrderService {
     private final UserRepository userRepo;
     private final MercadoPagoService mercadoPagoService;
     private final EmailService emailService;
+    private final BoletaService boletaService;
 
     @Autowired
     public OrderService(OrderRepository orderRepo, CuentoRepository cuentoRepo, UserRepository userRepo,
-            MercadoPagoService mercadoPagoService, EmailService emailService) {
+            MercadoPagoService mercadoPagoService, EmailService emailService, BoletaService boletaService) {
         this.orderRepo = orderRepo;
         this.cuentoRepo = cuentoRepo;
         this.userRepo = userRepo;
         this.mercadoPagoService = mercadoPagoService;
         this.emailService = emailService;
+        this.boletaService = boletaService;
     }
 
     private void populateOrderItemDetails(OrderItem item) {
@@ -293,6 +290,10 @@ public class OrderService {
         }
         orderRepo.save(order);
 
+        if (newStatus == OrderStatus.PAGO_VERIFICADO) {
+            boletaService.generarBoletaSiCorresponde(order.getId());
+        }
+
         // Notificar al usuario sobre el cambio
         emailService.enviarNotificacionCambioEstado(order, newStatus);
     }
@@ -302,13 +303,13 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
 
-        // Solo actualizar si no está entregado ni ya pagado (evitar sobreescribir)
+        // Solo actualizar si no estÃ¡ entregado ni ya pagado (evitar sobreescribir)
         if (order.getEstado() != OrderStatus.ENTREGADO && order.getEstado() != OrderStatus.PAGADO
                 && order.getEstado() != OrderStatus.VERIFICADO) {
             order.setEstado(OrderStatus.PAGADO);
             orderRepo.save(order);
 
-            // Avisar también el éxito del pago webhook
+            // Avisar tambiÃ©n el Ã©xito del pago webhook
             emailService.enviarNotificacionCambioEstado(order, OrderStatus.PAGADO);
         }
     }
@@ -336,3 +337,7 @@ public class OrderService {
     // The old save(PedidoDTO) is replaced by save(PedidoDTO, User).
     // The old getOrders(User user) is replaced by getOrdersByUser(UUID userId).
 }
+
+
+
+

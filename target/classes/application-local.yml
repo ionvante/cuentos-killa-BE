@@ -40,6 +40,9 @@ spring:
 file:
   upload-dir: ./uploads/vouchers
 
+boleta:
+  upload-dir: ./uploads/boletas
+
 firebase:
   credentials: ${FIREBASE_CREDENTIALS:firebase-service-account.json}
   bucket: ${FIREBASE_BUCKET:cuentoskilla-f84ff.firebasestorage.app}
@@ -57,3 +60,6 @@ jwt:
 
 frontend:
   url: http://localhost:4200
+
+
+

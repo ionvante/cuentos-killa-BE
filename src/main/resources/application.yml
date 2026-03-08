@@ -56,6 +56,9 @@ cors:
 file:
   upload-dir: uploads/vouchers
 
+boleta:
+  upload-dir: uploads/boletas
+
 upload:
   max-size: 5242880
 
@@ -85,3 +88,6 @@ sentry:
   
 frontend:
   url: ${FRONTEND_URL:https://killacuentos.web.app}
+
+
+
