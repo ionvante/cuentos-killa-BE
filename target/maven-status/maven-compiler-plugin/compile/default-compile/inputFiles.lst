@@ -31,6 +31,7 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\exception\ApiError.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\exception\RestExceptionHandler.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\Boleta.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\BoletaGeneracionEstado.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\CartItem.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\ConfigCategory.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\model\ConfigItem.java

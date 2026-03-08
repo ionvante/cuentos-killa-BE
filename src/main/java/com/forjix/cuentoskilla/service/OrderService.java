@@ -10,6 +10,8 @@ import com.forjix.cuentoskilla.repository.UserRepository;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.exceptions.MPApiException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepo;
     private final CuentoRepository cuentoRepo;
     private final UserRepository userRepo;
@@ -291,7 +294,16 @@ public class OrderService {
         orderRepo.save(order);
 
         if (newStatus == OrderStatus.PAGO_VERIFICADO) {
-            boletaService.generarBoletaSiCorresponde(order.getId());
+            try {
+                Boleta boleta = boletaService.generarBoletaSiCorresponde(order.getId());
+                if (boleta.getEstadoGeneracion() == BoletaGeneracionEstado.ERROR) {
+                    logger.warn("Pedido {} quedo en PAGO_VERIFICADO pero boleta en ERROR. intentos={}, ultimoError={}",
+                            order.getId(), boleta.getIntentos(), boleta.getUltimoError());
+                }
+            } catch (Exception ex) {
+                logger.warn("Pedido {} quedo en PAGO_VERIFICADO pero boleta no pudo procesarse: {}",
+                        order.getId(), ex.getMessage(), ex);
+            }
         }
 
         // Notificar al usuario sobre el cambio
@@ -337,6 +349,12 @@ public class OrderService {
     // The old save(PedidoDTO) is replaced by save(PedidoDTO, User).
     // The old getOrders(User user) is replaced by getOrdersByUser(UUID userId).
 }
+
+
+
+
+
+
 
 
 

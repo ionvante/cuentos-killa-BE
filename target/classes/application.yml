@@ -31,6 +31,7 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
     repair: true
+    detect-encoding: true
   mail:
     host: smtp.gmail.com
     port: 587
