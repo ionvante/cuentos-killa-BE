@@ -40,5 +40,18 @@ Ideal para automatización total, declarando a SUNAT en tiempo real.
     *   La tabla de Órdenes mostrará una nueva columna "Comprobante", indicando la serie y número generado (ej. `B001-00000062`).
     *   El admin también tendrá acceso a descargar el mismo PDF para sus registros contables.
 
+## 4. Historias de Usuario (Fase 1: Generación de PDF Local)
+
+### Épica: Facturación Electrónica - Representación Impresa
+
+| ID | Capa | Historia de Usuario | Criterios de Aceptación |
+| :--- | :--- | :--- | :--- |
+| **US-BE-01** | Backend | **Como** Administrador, **quiero** poder almacenar los parámetros de mi Empresa y las Series de facturación en la BD **para** no depender de variables duras al emitir comprobantes. | 1. Tabla `ParametrosEmpresa` creada (RUC, Razón Social, etc).<br>2. Endpoint CRUD seguro para que el Admin gestione estos datos. |
+| **US-BE-02** | Backend | **Como** Sistema, **quiero** generar un PDF con estructura de Boleta al aprobarse un pedido, **para** cumplir con la entrega del comprobante (Art. 31053 Exonerado IGV). | 1. Template integrado (JasperReports/OpenPDF).<br>2. Servicio intercepta cambio de estado a "Pago Verificado".<br>3. Genera PDF con el correlativo actual y lo guarda en `/uploads/boletas`. |
+| **US-BE-03** | Backend | **Como** Cliente/Admin, **quiero** un endpoint para consultar el PDF de mi boleta **para** poder descargarlo a mi dispositivo. | 1. Endpoint `GET /api/v1/pedidos/{id}/boleta`.<br>2. Validación de seguridad (solo dueño del pedido o Admin puede descargar). |
+| **US-FE-01** | Frontend | **Como** Cliente, **quiero** que el formulario de Datos de Envío valide obligatoriamente mi Documento (DNI/CE/Pasaporte) y Nombres completos **para** que mi boleta tenga mis datos correctos. | 1. Campos DNI/CE y Nombres no pueden estar vacíos ni ser inválidos.<br>2. Mapeo de valores con códigos SUNAT en el payload final (1=DNI, 4=CE). |
+| **US-FE-02** | Frontend | **Como** Cliente logueado, **quiero** ver un botón de "Descargar Boleta" en Mis Pedidos cuando el estado sea 'Pago Validado' **para** obtener mi recibo oficial. | 1. Botón visible solo en estados finales.<br>2. Al dar click, abre una pestaña nueva o acciona descarga del blob PDF llamando a `US-BE-03`. |
+| **US-FE-03** | Frontend | **Como** Administrador, **quiero** una columna de "Comprobante" en el Dashboard de Ventas **para** saber qué correlativo (Ej. B001-0004) se le asignó a cada venta y descargarla. | 1. Tabla de pedidos suma columna "Comprobante".<br>2. Botón de descarga/visualización incrustado. |
+
 ---
 *Documento autogenerado tras evaluación de arquitectura E2E y análisis de negocio para la plataforma KillaCuentos.*
