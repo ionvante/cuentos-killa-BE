@@ -16,6 +16,7 @@ com\forjix\cuentoskilla\repository\VoucherRepository.class
 com\forjix\cuentoskilla\service\EmailService.class
 com\forjix\cuentoskilla\CuentosKillaApplication.class
 com\forjix\cuentoskilla\repository\MaestroRepository.class
+com\forjix\cuentoskilla\controller\PasswordDebugConfig.class
 com\forjix\cuentoskilla\config\ConfigItemId.class
 com\forjix\cuentoskilla\model\PaymentVoucher.class
 com\forjix\cuentoskilla\config\UserDetailsServiceImpl.class
@@ -40,6 +41,7 @@ com\forjix\cuentoskilla\config\JwtUtil.class
 com\forjix\cuentoskilla\controller\DireccionController.class
 com\forjix\cuentoskilla\controller\UbigeoController.class
 com\forjix\cuentoskilla\service\DireccionService.class
+com\forjix\cuentoskilla\service\EmailService$1.class
 com\forjix\cuentoskilla\repository\StatsRepository.class
 com\forjix\cuentoskilla\controller\CartController.class
 com\forjix\cuentoskilla\model\Voucher.class
@@ -57,6 +59,7 @@ com\forjix\cuentoskilla\model\OrderItem.class
 com\forjix\cuentoskilla\repository\OrderRepository.class
 com\forjix\cuentoskilla\config\SecurityHeadersFilter.class
 com\forjix\cuentoskilla\repository\CuentoRepository.class
+com\forjix\cuentoskilla\config\WebMvcConfig.class
 com\forjix\cuentoskilla\model\DTOs\PedidoDTO.class
 com\forjix\cuentoskilla\config\FirebaseConfig.class
 com\forjix\cuentoskilla\model\OrderStatus.class

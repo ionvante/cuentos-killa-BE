@@ -10,6 +10,7 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\config\SecurityHeadersFilter.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\config\UserDetailsImpl.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\config\UserDetailsServiceImpl.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\config\WebMvcConfig.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\AdminController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\AuthController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\CartController.java
@@ -19,6 +20,7 @@ H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cue
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\MaestroController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\MercadoPagoWebhookController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\OrderController.java
+H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\PasswordDebugConfig.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\PaymentVoucherController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\StatsController.java
 H:\Proyectos\Cuentos de Killa\cuentos-killa-backend\src\main\java\com\forjix\cuentoskilla\controller\UbigeoController.java

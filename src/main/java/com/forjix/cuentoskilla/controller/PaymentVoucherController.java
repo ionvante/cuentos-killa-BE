@@ -4,8 +4,10 @@ import com.forjix.cuentoskilla.config.UserDetailsImpl;
 import com.forjix.cuentoskilla.model.Order;
 import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.model.PaymentVoucher;
+import com.forjix.cuentoskilla.model.Voucher;
 import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
 import com.forjix.cuentoskilla.repository.OrderRepository;
+import com.forjix.cuentoskilla.repository.VoucherRepository;
 import com.forjix.cuentoskilla.service.PaymentVoucherService;
 
 import org.slf4j.Logger;
@@ -16,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +43,13 @@ public class PaymentVoucherController {
     private static final Logger logger = LoggerFactory.getLogger(PaymentVoucherController.class);
     private final PaymentVoucherService voucherService;
     private final OrderRepository orderRepository;
+    private final VoucherRepository localVoucherRepository;
 
-    public PaymentVoucherController(PaymentVoucherService voucherService, OrderRepository orderRepository) {
+    public PaymentVoucherController(PaymentVoucherService voucherService, OrderRepository orderRepository,
+            VoucherRepository localVoucherRepository) {
         this.voucherService = voucherService;
         this.orderRepository = orderRepository;
+        this.localVoucherRepository = localVoucherRepository;
     }
 
     private UserDetailsImpl getCurrentUser() {
@@ -67,12 +73,19 @@ public class PaymentVoucherController {
         if (voucher.isPresent()) {
             String url = voucherService.generateSignedUrl(voucher.get());
             return ResponseEntity.ok(ApiResponse.success(
-                Map.of("url", url),
-                "URL firmada del comprobante obtenida exitosamente"
-            ));
+                    Map.of("url", url),
+                    "URL firmada del comprobante obtenida exitosamente"));
         } else {
+            Optional<Voucher> localVoucher = localVoucherRepository.findByOrder_Id(orderId);
+            if (localVoucher.isPresent()) {
+                String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+                String url = baseUrl + "/uploads/" + localVoucher.get().getNombreArchivo();
+                return ResponseEntity.ok(ApiResponse.success(
+                        Map.of("url", url),
+                        "URL local del comprobante obtenida exitosamente"));
+            }
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("VOUCHER_NOT_FOUND", "Comprobante no encontrado para el pedido"));
+                    .body(ApiResponse.error("VOUCHER_NOT_FOUND", "Comprobante no encontrado para el pedido"));
         }
     }
 
@@ -87,38 +100,41 @@ public class PaymentVoucherController {
             @PathVariable("id") Long orderId) {
         UserDetailsImpl user = getCurrentUser();
         logger.info("DELETE /api/v1/pedidos/{}/voucher - Usuario {} eliminando comprobante", orderId, user.getId());
-        
+
         Optional<PaymentVoucher> voucherOpt = voucherService.findByOrder(orderId);
         if (voucherOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("VOUCHER_NOT_FOUND", "Comprobante no encontrado"));
+                    .body(ApiResponse.error("VOUCHER_NOT_FOUND", "Comprobante no encontrado"));
         }
-        
+
         PaymentVoucher voucher = voucherOpt.get();
         Order order = voucher.getOrder();
-        
+
         // Verificar permisos: ADMIN o propietario del pedido
         boolean isAdmin = user.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
         if (!isAdmin && !order.getUser().getId().equals(user.getId())) {
-            logger.warn("Acceso denegado al intento de eliminar comprobante del pedido {} por usuario {}", orderId, user.getId());
+            logger.warn("Acceso denegado al intento de eliminar comprobante del pedido {} por usuario {}", orderId,
+                    user.getId());
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("ACCESS_DENIED", "No tienes permiso para eliminar este comprobante"));
+                    .body(ApiResponse.error("ACCESS_DENIED", "No tienes permiso para eliminar este comprobante"));
         }
-        
+
         // Validar estado del pedido si el usuario no es ADMIN
         if (!isAdmin) {
             if (order.getEstado() != OrderStatus.PAGO_PENDIENTE && order.getEstado() != OrderStatus.PAGO_ENVIADO) {
-                logger.warn("Intento de eliminar comprobante en estado no permitido {} para pedido {}", order.getEstado(), orderId);
+                logger.warn("Intento de eliminar comprobante en estado no permitido {} para pedido {}",
+                        order.getEstado(), orderId);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error("INVALID_ORDER_STATE", "No se puede eliminar el comprobante en este estado del pedido"));
+                        .body(ApiResponse.error("INVALID_ORDER_STATE",
+                                "No se puede eliminar el comprobante en este estado del pedido"));
             }
         }
-        
+
         voucherService.delete(voucher);
         logger.info("Comprobante eliminado exitosamente para pedido {}", orderId);
-        
+
         return ResponseEntity.ok(ApiResponse.success(null, "Comprobante eliminado exitosamente"));
     }
 }
