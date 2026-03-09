@@ -1,12 +1,20 @@
 package com.forjix.cuentoskilla.model;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "orders")
@@ -20,7 +28,7 @@ public class Order {
     private LocalDateTime created_at;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus estado; // Generado, Pagado, etc.
+    private OrderStatus estado;
 
     private BigDecimal total;
 
@@ -28,18 +36,35 @@ public class Order {
     private String motivoRechazo;
 
     @ManyToOne
-    @JsonIgnore // <-- importante si el ciclo proviene de aquí
+    @JsonIgnore
     private User user;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(name = "direccion_id")
+    private Long direccionId;
+
+    @Column(name = "direccion", columnDefinition = "TEXT")
+    private String direccion;
+
+    @Column(name = "tipo_direccion")
+    private String tipoDireccion;
+
+    private String departamento;
+    private String provincia;
+    private String distrito;
+    private String calle;
+    private String referencia;
+
+    @Column(name = "codigo_postal")
+    private String codigoPostal;
+
+    @OneToMany(mappedBy = "order", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OrderItem> items;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Voucher> vouchers;
 
-    // Getters y setters
     public Long getId() {
         return id;
     }
@@ -80,7 +105,78 @@ public class Order {
         this.user = user;
     }
 
-    // Método para exponer el ID en el JSON de respuesta sin romper el ciclo
+    public Long getDireccionId() {
+        return direccionId;
+    }
+
+    public void setDireccionId(Long direccionId) {
+        this.direccionId = direccionId;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getTipoDireccion() {
+        return tipoDireccion;
+    }
+
+    public void setTipoDireccion(String tipoDireccion) {
+        this.tipoDireccion = tipoDireccion;
+    }
+
+    public String getDepartamento() {
+        return departamento;
+    }
+
+    public void setDepartamento(String departamento) {
+        this.departamento = departamento;
+    }
+
+    public String getProvincia() {
+        return provincia;
+    }
+
+    public void setProvincia(String provincia) {
+        this.provincia = provincia;
+    }
+
+    public String getDistrito() {
+        return distrito;
+    }
+
+    public void setDistrito(String distrito) {
+        this.distrito = distrito;
+    }
+
+    public String getCalle() {
+        return calle;
+    }
+
+    public void setCalle(String calle) {
+        this.calle = calle;
+    }
+
+    public String getReferencia() {
+        return referencia;
+    }
+
+    public void setReferencia(String referencia) {
+        this.referencia = referencia;
+    }
+
+    public String getCodigoPostal() {
+        return codigoPostal;
+    }
+
+    public void setCodigoPostal(String codigoPostal) {
+        this.codigoPostal = codigoPostal;
+    }
+
     public Long getUserId() {
         return user != null ? user.getId() : null;
     }

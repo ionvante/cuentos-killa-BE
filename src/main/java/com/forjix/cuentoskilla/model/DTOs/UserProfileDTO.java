@@ -6,7 +6,6 @@ public class UserProfileDTO {
     private String telefono;
     private String documentoTipo;
     private String documentoNumero;
-    private String documento;
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
@@ -22,7 +21,4 @@ public class UserProfileDTO {
 
     public String getDocumentoNumero() { return documentoNumero; }
     public void setDocumentoNumero(String documentoNumero) { this.documentoNumero = documentoNumero; }
-
-    public String getDocumento() { return documento; }
-    public void setDocumento(String documento) { this.documento = documento; }
 }

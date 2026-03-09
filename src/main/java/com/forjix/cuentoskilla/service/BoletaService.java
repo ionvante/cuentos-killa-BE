@@ -17,20 +17,14 @@ import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.awt.Color;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.awt.Color;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -39,10 +33,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BoletaService {
@@ -50,11 +52,13 @@ public class BoletaService {
     private static final Logger logger = LoggerFactory.getLogger(BoletaService.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private static final Charset CP1252 = Charset.forName("windows-1252");
-    private static final Color COLOR_PRIMARY = new Color(57, 27, 16);
-    private static final Color COLOR_BORDER = new Color(151, 113, 83);
-    private static final Color COLOR_SOFT_GREEN = new Color(239, 246, 240);
-    private static final Color COLOR_SOFT_BEIGE = new Color(239, 222, 200);
-    private static final Color COLOR_SOFT_IVORY = new Color(250, 246, 239);
+    private static final Color COLOR_PRIMARY = new Color(74, 43, 35);
+    private static final Color COLOR_BORDER = new Color(74, 43, 35);
+    private static final Color COLOR_INFO_BLOCK = new Color(242, 245, 234);
+    private static final Color COLOR_HEADER_ROW = new Color(207, 164, 118);
+    private static final Color COLOR_SUMMARY_BLOCK = new Color(235, 218, 200);
+    private static final Color COLOR_PAGE_BG = new Color(250, 247, 240);
+    private static final Color COLOR_QR_BANNER = new Color(0, 82, 204);
     private static final int MAX_ERROR_LENGTH = 500;
 
     private final BoletaRepository boletaRepository;
@@ -212,8 +216,9 @@ public class BoletaService {
         Document document = new Document(PageSize.A4, 36f, 36f, 28f, 28f);
 
         try (OutputStream outputStream = Files.newOutputStream(destination)) {
-            PdfWriter.getInstance(document, outputStream);
+            PdfWriter writer = PdfWriter.getInstance(document, outputStream);
             document.open();
+            applyPageBackground(writer, document);
 
             String razonSocial = facturacionConfigService.obtenerValorObligatorio("EMPRESA_RAZON_SOCIAL");
             String ruc = facturacionConfigService.obtenerValorObligatorio("EMPRESA_RUC");
@@ -221,12 +226,14 @@ public class BoletaService {
 
             String clienteNombre = order.getUser() != null ? order.getUser().getNombre() : null;
             String clienteCorreo = order.getUser() != null ? order.getUser().getEmail() : null;
-            String clienteDocumento = order.getUser() != null ? order.getUser().getDocumento() : null;
+            String clienteDocumento = order.getUser() != null ? order.getUser().getDocumentoNumero() : null;
+            String clienteDireccion = resolverDireccionCliente(order);
             LocalDateTime fechaEmision = order.getCreatedAt() != null ? order.getCreatedAt() : LocalDateTime.now();
             BigDecimal total = order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO;
 
-            agregarEncabezado(document, numeroComprobante, fechaEmision);
-            agregarBloqueDatos(document, razonSocial, ruc, direccion, clienteNombre, clienteCorreo, clienteDocumento);
+            agregarEncabezado(document, razonSocial, numeroComprobante, fechaEmision);
+            agregarBloqueDatos(document, razonSocial, ruc, direccion, clienteNombre, clienteCorreo, clienteDocumento,
+                    clienteDireccion);
             agregarTablaDetalle(document, order.getItems());
             agregarResumen(document, total);
             agregarPie(document);
@@ -267,38 +274,62 @@ public class BoletaService {
         return (value == null || value.isBlank()) ? "N/D" : value;
     }
 
+    private String resolverDireccionCliente(Order order) {
+        if (order == null) {
+            return null;
+        }
+        if (order.getDireccion() != null && !order.getDireccion().isBlank()) {
+            return order.getDireccion();
+        }
+
+        List<String> parts = new ArrayList<>();
+        addAddressPart(parts, order.getCalle());
+        addAddressPart(parts, order.getReferencia());
+        addAddressPart(parts, order.getDistrito());
+        addAddressPart(parts, order.getProvincia());
+        addAddressPart(parts, order.getDepartamento());
+        addAddressPart(parts, order.getCodigoPostal());
+        return parts.isEmpty() ? null : String.join(", ", parts);
+    }
+
+    private void addAddressPart(List<String> parts, String value) {
+        if (value != null && !value.isBlank()) {
+            parts.add(value.trim());
+        }
+    }
+
     private boolean isNotEmpty(Collection<?> value) {
         return value != null && !value.isEmpty();
     }
 
-    private void agregarEncabezado(Document document, String numeroComprobante, LocalDateTime fechaEmision) throws DocumentException {
-        Font brandFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, COLOR_PRIMARY);
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 30, COLOR_PRIMARY);
-        Font numberFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 26, COLOR_PRIMARY);
+    private void agregarEncabezado(Document document,
+                                   String razonSocial,
+                                   String numeroComprobante,
+                                   LocalDateTime fechaEmision) throws DocumentException {
+        Font brandFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 19, COLOR_PRIMARY);
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 27, COLOR_PRIMARY);
+        Font numberFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, COLOR_PRIMARY);
         Font dateFont = FontFactory.getFont(FontFactory.HELVETICA, 11, COLOR_PRIMARY);
 
-        PdfPTable brandRow = new PdfPTable(new float[]{1f, 1f});
+        PdfPTable brandRow = new PdfPTable(new float[]{100f});
         brandRow.setWidthPercentage(100f);
-        brandRow.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
+        brandRow.setSpacingAfter(5f);
 
         PdfPCell brandCell = createNoBorderCell();
-        Paragraph brand = new Paragraph();
-        brand.add(new Chunk(sanitizeForPdf("Cuentos"), brandFont));
-        brand.add(Chunk.NEWLINE);
-        brand.add(new Chunk(sanitizeForPdf("de Killa"), brandFont));
+        brandCell.setPaddingBottom(2f);
+        Paragraph brand = new Paragraph(sanitizeForPdf(safeText(razonSocial)), brandFont);
+        brand.setLeading(21f);
         brandCell.addElement(brand);
         brandRow.addCell(brandCell);
-        brandRow.addCell(createNoBorderCell());
         document.add(brandRow);
 
-        PdfPTable titleRow = new PdfPTable(new float[]{62f, 38f});
+        PdfPTable titleRow = new PdfPTable(new float[]{66f, 34f});
         titleRow.setWidthPercentage(100f);
-        titleRow.setSpacingBefore(6f);
-        titleRow.setSpacingAfter(4f);
+        titleRow.setSpacingAfter(8f);
 
         PdfPCell titleCell = createNoBorderCell();
         Paragraph title = new Paragraph(sanitizeForPdf("BOLETA DE VENTA ELECTRONICA"), titleFont);
-        title.setLeading(32f);
+        title.setLeading(28f);
         titleCell.addElement(title);
         titleRow.addCell(titleCell);
 
@@ -312,6 +343,18 @@ public class BoletaService {
         numberCell.addElement(date);
         titleRow.addCell(numberCell);
         document.add(titleRow);
+
+        PdfPTable divider = new PdfPTable(1);
+        divider.setWidthPercentage(100f);
+        PdfPCell dividerCell = new PdfPCell();
+        dividerCell.setBorder(Rectangle.BOTTOM);
+        dividerCell.setBorderColor(COLOR_BORDER);
+        dividerCell.setBorderWidthBottom(0.9f);
+        dividerCell.setFixedHeight(4f);
+        dividerCell.setPadding(0f);
+        divider.addCell(dividerCell);
+        divider.setSpacingAfter(8f);
+        document.add(divider);
     }
 
     private void agregarBloqueDatos(Document document,
@@ -320,15 +363,17 @@ public class BoletaService {
                                     String direccion,
                                     String clienteNombre,
                                     String clienteCorreo,
-                                    String clienteDocumento) throws DocumentException {
-        Font sectionTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, COLOR_PRIMARY);
+                                    String clienteDocumento,
+                                    String clienteDireccion) throws DocumentException {
+        Font sectionTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, COLOR_PRIMARY);
         Paragraph section = new Paragraph(sanitizeForPdf("DATOS DEL EMISOR Y CLIENTE"), sectionTitle);
-        section.setSpacingBefore(8f);
-        section.setSpacingAfter(8f);
+        section.setSpacingBefore(3f);
+        section.setSpacingAfter(7f);
         document.add(section);
 
         PdfPTable container = new PdfPTable(new float[]{1f, 1f});
         container.setWidthPercentage(100f);
+        container.setSpacingAfter(14f);
 
         PdfPCell emisor = createInfoCell();
         addLabelValueLine(emisor, "EMISOR:", razonSocial);
@@ -340,8 +385,8 @@ public class BoletaService {
         addLabelValueLine(cliente, "CLIENTE:", safeText(clienteNombre));
         addLabelValueLine(cliente, "Correo:", safeText(clienteCorreo));
         addLabelValueLine(cliente, "Documento:", safeText(clienteDocumento));
+        addLabelValueLine(cliente, "Direccion:", safeText(clienteDireccion));
         container.addCell(cliente);
-        container.setSpacingAfter(14f);
 
         document.add(container);
     }
@@ -367,7 +412,7 @@ public class BoletaService {
                 BigDecimal subtotal = item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO;
                 BigDecimal unitPrice = BigDecimal.valueOf(item.getPrecio_unitario());
 
-                table.addCell(createBodyCell("- " + safeText(item.getNombre()), valueFont, Element.ALIGN_LEFT));
+                table.addCell(createBodyCell(safeText(item.getNombre()), valueFont, Element.ALIGN_LEFT));
                 table.addCell(createBodyCell(String.valueOf(item.getCantidad()), valueFont, Element.ALIGN_CENTER));
                 table.addCell(createBodyCell("S/ " + money(unitPrice), valueFont, Element.ALIGN_RIGHT));
                 table.addCell(createBodyCell("S/ " + money(subtotal), valueFont, Element.ALIGN_RIGHT));
@@ -382,9 +427,9 @@ public class BoletaService {
     }
 
     private void agregarResumen(Document document, BigDecimal total) throws DocumentException {
-        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, COLOR_PRIMARY);
-        Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 14, COLOR_PRIMARY);
-        Font valueBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, COLOR_PRIMARY);
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, COLOR_PRIMARY);
+        Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 13, COLOR_PRIMARY);
+        Font valueBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, COLOR_PRIMARY);
 
         PdfPTable resumen = new PdfPTable(new float[]{74f, 26f});
         resumen.setWidthPercentage(100f);
@@ -396,44 +441,68 @@ public class BoletaService {
         resumen.addCell(createSummaryCell("20 (Exonerado)", valueFont, Element.ALIGN_RIGHT));
 
         PdfPTable wrapper = new PdfPTable(1);
-        wrapper.setWidthPercentage(50f);
+        wrapper.setWidthPercentage(52f);
         wrapper.setHorizontalAlignment(Element.ALIGN_RIGHT);
         PdfPCell wrapCell = new PdfPCell(resumen);
         wrapCell.setBorderColor(COLOR_BORDER);
         wrapCell.setBorderWidth(1.5f);
-        wrapCell.setPadding(10f);
-        wrapCell.setBackgroundColor(COLOR_SOFT_IVORY);
+        wrapCell.setPadding(11f);
+        wrapCell.setBackgroundColor(COLOR_SUMMARY_BLOCK);
         wrapper.addCell(wrapCell);
-        wrapper.setSpacingAfter(16f);
+        wrapper.setSpacingAfter(19f);
         document.add(wrapper);
     }
 
     private void agregarPie(Document document) throws DocumentException {
-        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 13, COLOR_PRIMARY);
-        Font strongFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, COLOR_PRIMARY);
-        Font qrFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, COLOR_PRIMARY);
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 12, COLOR_PRIMARY);
+        Font strongFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, COLOR_PRIMARY);
+        Font qrLabelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
+        Font qrBodyFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, COLOR_PRIMARY);
 
-        PdfPTable footer = new PdfPTable(new float[]{86f, 14f});
+        PdfPTable footer = new PdfPTable(new float[]{84f, 16f});
         footer.setWidthPercentage(100f);
+        footer.setSpacingBefore(8f);
 
         PdfPCell textCell = createNoBorderCell();
+        textCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        textCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
         Paragraph line1 = new Paragraph();
-        line1.setAlignment(Element.ALIGN_CENTER);
+        line1.setAlignment(Element.ALIGN_RIGHT);
         line1.add(new Chunk(sanitizeForPdf("Gracias por tu compra en "), normalFont));
         line1.add(new Chunk(sanitizeForPdf("Cuentos de Killa!"), strongFont));
         textCell.addElement(line1);
         Paragraph line2 = new Paragraph(sanitizeForPdf("Fomentando la imaginacion."), normalFont);
-        line2.setAlignment(Element.ALIGN_CENTER);
+        line2.setAlignment(Element.ALIGN_RIGHT);
         textCell.addElement(line2);
         footer.addCell(textCell);
 
-        PdfPCell qrCell = new PdfPCell(new Phrase(sanitizeForPdf("Validar SUNAT\nQR"), qrFont));
+        PdfPTable qrTable = new PdfPTable(1);
+        qrTable.setWidthPercentage(100f);
+
+        PdfPCell bannerCell = new PdfPCell(new Phrase(sanitizeForPdf("Validar con SUNAT"), qrLabelFont));
+        bannerCell.setBackgroundColor(COLOR_QR_BANNER);
+        bannerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        bannerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        bannerCell.setPaddingTop(3f);
+        bannerCell.setPaddingBottom(3f);
+        bannerCell.setBorder(Rectangle.NO_BORDER);
+        qrTable.addCell(bannerCell);
+
+        PdfPCell qrBodyCell = new PdfPCell(new Phrase(sanitizeForPdf("QR"), qrBodyFont));
+        qrBodyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        qrBodyCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        qrBodyCell.setMinimumHeight(52f);
+        qrBodyCell.setPadding(4f);
+        qrBodyCell.setBorderColor(COLOR_BORDER);
+        qrBodyCell.setBorderWidth(1f);
+        qrTable.addCell(qrBodyCell);
+
+        PdfPCell qrCell = new PdfPCell(qrTable);
         qrCell.setBorderColor(COLOR_BORDER);
-        qrCell.setBorderWidth(1.2f);
-        qrCell.setMinimumHeight(64f);
+        qrCell.setBorderWidth(1f);
         qrCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        qrCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        qrCell.setPadding(6f);
+        qrCell.setVerticalAlignment(Element.ALIGN_BOTTOM);
+        qrCell.setPadding(2f);
         footer.addCell(qrCell);
 
         document.add(footer);
@@ -458,8 +527,8 @@ public class BoletaService {
 
     private PdfPCell createInfoCell() {
         PdfPCell cell = new PdfPCell();
-        cell.setPadding(12f);
-        cell.setBackgroundColor(COLOR_SOFT_GREEN);
+        cell.setPadding(10f);
+        cell.setBackgroundColor(COLOR_INFO_BLOCK);
         cell.setBorderColor(COLOR_BORDER);
         cell.setBorderWidth(1f);
         return cell;
@@ -470,7 +539,7 @@ public class BoletaService {
         cell.setPadding(9f);
         cell.setHorizontalAlignment(align);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setBackgroundColor(COLOR_SOFT_BEIGE);
+        cell.setBackgroundColor(COLOR_HEADER_ROW);
         cell.setBorderColor(COLOR_PRIMARY);
         cell.setBorderWidth(1f);
         return cell;
@@ -492,8 +561,17 @@ public class BoletaService {
         cell.setHorizontalAlignment(align);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setBorder(PdfPCell.NO_BORDER);
-        cell.setBackgroundColor(COLOR_SOFT_IVORY);
+        cell.setBackgroundColor(COLOR_SUMMARY_BLOCK);
         return cell;
+    }
+
+    private void applyPageBackground(PdfWriter writer, Document document) {
+        Rectangle page = document.getPageSize();
+        writer.getDirectContentUnder().saveState();
+        writer.getDirectContentUnder().setColorFill(COLOR_PAGE_BG);
+        writer.getDirectContentUnder().rectangle(page.getLeft(), page.getBottom(), page.getWidth(), page.getHeight());
+        writer.getDirectContentUnder().fill();
+        writer.getDirectContentUnder().restoreState();
     }
 
     private String money(BigDecimal value) {
@@ -555,5 +633,3 @@ public class BoletaService {
                                     String ultimoError) {
     }
 }
-
-

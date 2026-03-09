@@ -25,8 +25,9 @@ public class Direccion {
     private String calle;
     private String ciudad;
     private String departamento;
-    private String provincia;    
+    private String provincia;
     private String distrito;
+    private String tipoDireccion;
     private String referencia;
     private String codigoPostal;
 
@@ -38,7 +39,6 @@ public class Direccion {
     @JsonBackReference
     private User usuario;
 
-    // Auditoría
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 
@@ -56,7 +56,6 @@ public class Direccion {
         this.fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y setters...
     public Long getId() {
         return id;
     }
@@ -103,6 +102,14 @@ public class Direccion {
 
     public void setDistrito(String distrito) {
         this.distrito = distrito;
+    }
+
+    public String getTipoDireccion() {
+        return tipoDireccion;
+    }
+
+    public void setTipoDireccion(String tipoDireccion) {
+        this.tipoDireccion = tipoDireccion;
     }
 
     public String getReferencia() {
@@ -176,6 +183,4 @@ public class Direccion {
     public void setActualizadoPor(String actualizadoPor) {
         this.actualizadoPor = actualizadoPor;
     }
-
-
 }

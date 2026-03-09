@@ -7,6 +7,7 @@ import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.model.Rol;
 import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.repository.CuentoRepository;
+import com.forjix.cuentoskilla.repository.DireccionRepository;
 import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ class OrderServiceBoletaResilienceTest {
 
     private OrderRepository orderRepository;
     private UserRepository userRepository;
+    private DireccionRepository direccionRepository;
     private StubBoletaService boletaService;
     private StubEmailService emailService;
     private OrderService orderService;
@@ -31,6 +33,7 @@ class OrderServiceBoletaResilienceTest {
         orderRepository = Mockito.mock(OrderRepository.class);
         CuentoRepository cuentoRepository = Mockito.mock(CuentoRepository.class);
         userRepository = Mockito.mock(UserRepository.class);
+        direccionRepository = Mockito.mock(DireccionRepository.class);
         MercadoPagoService mercadoPagoService = new MercadoPagoService();
         emailService = new StubEmailService();
         boletaService = new StubBoletaService();
@@ -39,6 +42,7 @@ class OrderServiceBoletaResilienceTest {
                 orderRepository,
                 cuentoRepository,
                 userRepository,
+                direccionRepository,
                 mercadoPagoService,
                 emailService,
                 boletaService

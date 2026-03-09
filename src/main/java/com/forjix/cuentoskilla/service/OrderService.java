@@ -1,42 +1,61 @@
 package com.forjix.cuentoskilla.service;
 
-import com.forjix.cuentoskilla.model.*; // Import all from model
+import com.forjix.cuentoskilla.model.Boleta;
+import com.forjix.cuentoskilla.model.BoletaGeneracionEstado;
+import com.forjix.cuentoskilla.model.Cuento;
+import com.forjix.cuentoskilla.model.Direccion;
+import com.forjix.cuentoskilla.model.Order;
+import com.forjix.cuentoskilla.model.OrderItem;
+import com.forjix.cuentoskilla.model.OrderStatus;
+import com.forjix.cuentoskilla.model.Rol;
+import com.forjix.cuentoskilla.model.User;
 import com.forjix.cuentoskilla.model.DTOs.PedidoDTO;
-// PedidoItemDTO might still be used for creating orders
 import com.forjix.cuentoskilla.model.DTOs.PedidoItemDTO;
 import com.forjix.cuentoskilla.repository.CuentoRepository;
+import com.forjix.cuentoskilla.repository.DireccionRepository;
 import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.repository.UserRepository;
-import com.mercadopago.exceptions.MPException;
 import com.mercadopago.exceptions.MPApiException;
-
+import com.mercadopago.exceptions.MPException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class OrderService {
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+    private static final Set<String> TIPOS_DIRECCION_VALIDOS = Set.of("CASA", "TRABAJO", "FAMILIAR", "OTRO");
+
     private final OrderRepository orderRepo;
     private final CuentoRepository cuentoRepo;
     private final UserRepository userRepo;
+    private final DireccionRepository direccionRepo;
     private final MercadoPagoService mercadoPagoService;
     private final EmailService emailService;
     private final BoletaService boletaService;
 
     @Autowired
-    public OrderService(OrderRepository orderRepo, CuentoRepository cuentoRepo, UserRepository userRepo,
-            MercadoPagoService mercadoPagoService, EmailService emailService, BoletaService boletaService) {
+    public OrderService(OrderRepository orderRepo,
+                        CuentoRepository cuentoRepo,
+                        UserRepository userRepo,
+                        DireccionRepository direccionRepo,
+                        MercadoPagoService mercadoPagoService,
+                        EmailService emailService,
+                        BoletaService boletaService) {
         this.orderRepo = orderRepo;
         this.cuentoRepo = cuentoRepo;
         this.userRepo = userRepo;
+        this.direccionRepo = direccionRepo;
         this.mercadoPagoService = mercadoPagoService;
         this.emailService = emailService;
         this.boletaService = boletaService;
@@ -46,10 +65,8 @@ public class OrderService {
         if (item.getCuento() != null) {
             Cuento cuento = cuentoRepo.findById(item.getCuento().getId())
                     .orElseThrow(() -> new RuntimeException("Cuento not found for item: " + item.getId()));
-            item.setNombre(cuento.getTitulo()); // Assuming Cuento has getTitulo() for name
-            item.setImagen_url(cuento.getImagenUrl()); // Assuming Cuento has getImagenUrl()
-            // precio_unitario should already be set when order is created
-            // it's now double, so casting to BigDecimal if needed, or keeping as double
+            item.setNombre(cuento.getTitulo());
+            item.setImagen_url(cuento.getImagenUrl());
             BigDecimal precioUnitario = BigDecimal.valueOf(item.getPrecio_unitario());
             item.setSubtotal(precioUnitario.multiply(BigDecimal.valueOf(item.getCantidad())));
         }
@@ -86,6 +103,15 @@ public class OrderService {
             dto.setUserId(order.getUser().getId());
             dto.setCorreoUsuario(order.getUser().getEmail());
         }
+        dto.setDireccionId(order.getDireccionId());
+        dto.setDireccion(order.getDireccion());
+        dto.setTipoDireccion(order.getTipoDireccion());
+        dto.setDepartamento(order.getDepartamento());
+        dto.setProvincia(order.getProvincia());
+        dto.setDistrito(order.getDistrito());
+        dto.setCalle(order.getCalle());
+        dto.setReferencia(order.getReferencia());
+        dto.setCodigoPostal(order.getCodigoPostal());
         dto.setEstado(order.getEstado().toString());
         dto.setTotal(order.getTotal() != null ? order.getTotal().doubleValue() : 0);
         dto.setItems(order.getItems().stream().map(this::mapToItemDTO).collect(Collectors.toList()));
@@ -98,7 +124,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<PedidoDTO> getOrders(long userId) {
-        User user = userRepo.findById(userId)
+        userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         List<Order> orders = orderRepo.findAll();
         orders.forEach(this::populateOrderItems);
@@ -125,13 +151,14 @@ public class OrderService {
         return order;
     }
 
-    // Method called by controller's /mercadopago/create-preference
     @Transactional
     public Order save(PedidoDTO pedidoDTO, User authenticatedUser) {
         Order order = new Order();
-        order.setUser(authenticatedUser); // Set the authenticated user
+        order.setUser(authenticatedUser);
         order.setCreatedAt(LocalDateTime.now());
-        order.setEstado(OrderStatus.PAGO_PENDIENTE); // New orders are PENDIENTE
+        order.setEstado(OrderStatus.PAGO_PENDIENTE);
+
+        aplicarSnapshotDireccion(order, pedidoDTO, authenticatedUser);
 
         List<OrderItem> items = pedidoDTO.getItems().stream().map(dto -> {
             Cuento cuento = cuentoRepo.findById(dto.getCuentoId())
@@ -140,11 +167,8 @@ public class OrderService {
             OrderItem item = new OrderItem();
             item.setCuento(cuento);
             item.setCantidad(dto.getCantidad());
-            // Ensure precio_unitario is set using the Cuento's price
-            item.setPrecio_unitario(cuento.getPrecio()); // This is double
+            item.setPrecio_unitario(cuento.getPrecio());
             item.setOrder(order);
-
-            // Populate details for subtotal calculation
             item.setNombre(cuento.getTitulo());
             item.setImagen_url(cuento.getImagenUrl());
             BigDecimal precioUnitario = BigDecimal.valueOf(cuento.getPrecio());
@@ -154,7 +178,6 @@ public class OrderService {
 
         order.setItems(items);
 
-        // Calculate total
         BigDecimal total = items.stream()
                 .map(OrderItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -165,103 +188,14 @@ public class OrderService {
 
     @Transactional
     public String initiatePayment(long orderId, long userId) throws MPException, MPApiException {
-        Order order = getOrderByIdAndUser(orderId, userId); // Verifies ownership
+        Order order = getOrderByIdAndUser(orderId, userId);
 
         if (order.getEstado() != OrderStatus.PAGO_PENDIENTE) {
             throw new IllegalStateException("Order is not in PENDIENTE state, cannot initiate payment.");
         }
 
-        // The assumption is that PedidoDTO is not needed here if the preference was
-        // already created
-        // when the order was saved by POST /api/orders/mercadopago/create-preference
-        // If the preference needs to be (re)created here, we would need more details or
-        // the PedidoDTO
-        // For now, let's assume MercadoPagoService can find or create a preference with
-        // just order and user info.
-        // Or, if the initPoint is stored with the order, retrieve it.
-        // This part depends heavily on how MercadoPagoService is designed and how
-        // init_point is managed.
-
-        // Example: if init_point was stored on the Order entity (it's not, per current
-        // model)
-        // if (order.getMercadoPagoInitPoint() != null) {
-        // return order.getMercadoPagoInitPoint();
-        // }
-
-        // If MercadoPagoService needs to create it now:
-        // We need to reconstruct something like PedidoDTO or pass necessary info.
-        // This is a potential design gap if init_point isn't stored or easily
-        // retrievable/recreatable.
-
-        // Given the controller's createPaymentPreference already generates and returns
-        // initPoint,
-        // this method might be more about confirming the order state and returning that
-        // *same* initPoint
-        // if it was stored, or simply confirming the order is ready for payment.
-        // The controller receives the initPoint from
-        // mercadoPagoService.createPaymentPreference and returns it.
-        // The client should use that initPoint.
-        // So, this `initiatePayment` might be redundant if the client already has the
-        // initPoint.
-        // Or, it's a final check before the user is redirected by the frontend.
-
-        // For now, let's assume this method is a final validation step and doesn't need
-        // to re-create preference.
-        // If a preference ID was stored on the order, it could be used to fetch payment
-        // status or details.
-        // The subtask says "interact with a payment service" and "Update the order
-        // status accordingly".
-        // This implies it might do more than just validate.
-        // However, changing status to PAGADO here is tricky without a webhook.
-        // Let's assume it returns a preference ID or init_point from MP.
-
-        // If the preference was created and its ID stored with the order (e.g. in a new
-        // field `preferenceId` on Order)
-        // String preferenceId = order.getPreferenceId();
-        // if (preferenceId == null) {
-        // Preference preference = mercadoPagoService.createPreferenceForOrder(order);
-        // // A new MP service method
-        // order.setPreferenceId(preference.getId());
-        // orderRepo.save(order);
-        // return preference.getInitPoint();
-        // } else {
-        // Preference preference = mercadoPagoService.getPreference(preferenceId); //
-        // Another new MP service method
-        // return preference.getInitPoint(); // Or sandbox_init_point
-        // }
-        // This is speculative as Order model doesn't have preferenceId.
-        // The most straightforward approach given current structure: this method is
-        // largely a validation.
-        // The actual payment URL (init_point) should have been obtained by the client
-        // from the
-        // POST /api/orders/mercadopago/create-preference endpoint.
-        // So, this method might just return a confirmation or the order status.
-
-        // Let's assume for the sake of fulfilling "interact with payment service" that
-        // it
-        // tries to get a fresh init_point or confirms existing one.
-        // This would likely require the PedidoDTO or similar data again.
-        // This is a bit of a loop if create-preference already did this.
-        // A simpler role for `initiatePayment` might be to change local order status to
-        // something like `AWAITING_PAYMENT_CONFIRMATION`
-        // but `PENDIENTE` already covers this.
-
-        // Re-evaluating: The controller's POST /api/orders/{id}/pay calls this.
-        // This should not create a *new* order. It acts on an *existing* order.
-        // The `createPaymentPreference` in controller saves an order and returns
-        // init_point.
-        // The client hits `/pay` perhaps to log the attempt or as a gate.
-        // This service method should return the init_point, assuming it's retrievable
-        // or can be regenerated.
-        // For now, let's assume MercadoPagoService can generate/retrieve it using order
-        // data.
-        // To fix: The method getOrCreatePaymentPreferenceUrl(Order) is undefined for
-        // the type MercadoPagoService
-        // We need to pass a PedidoDTO to MercadoPagoService.createPaymentPreference.
-        // Since we have the order, we can reconstruct a PedidoDTO from it.
         PedidoDTO pedidoDTO = mapToPedidoDTO(order);
         return mercadoPagoService.createPaymentPreference(pedidoDTO, order.getId()).getInitPoint();
-
     }
 
     @Transactional(readOnly = true)
@@ -279,7 +213,6 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
 
-        // Verifica si el usuario que cambia el estado es un ADMIN
         User adminUser = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
@@ -306,7 +239,6 @@ public class OrderService {
             }
         }
 
-        // Notificar al usuario sobre el cambio
         emailService.enviarNotificacionCambioEstado(order, newStatus);
     }
 
@@ -315,13 +247,10 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
 
-        // Solo actualizar si no estÃ¡ entregado ni ya pagado (evitar sobreescribir)
         if (order.getEstado() != OrderStatus.ENTREGADO && order.getEstado() != OrderStatus.PAGADO
                 && order.getEstado() != OrderStatus.VERIFICADO) {
             order.setEstado(OrderStatus.PAGADO);
             orderRepo.save(order);
-
-            // Avisar tambiÃ©n el Ã©xito del pago webhook
             emailService.enviarNotificacionCambioEstado(order, OrderStatus.PAGADO);
         }
     }
@@ -331,12 +260,11 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
                 .orElse(null);
         if (order == null) {
-            return false; // Or throw NotFoundException
+            return false;
         }
         if (!order.getUser().getId().equals(userId)) {
             throw new SecurityException("User not authorized to delete this order.");
         }
-        // Potentially add checks, e.g., cannot delete if PENDING_PAYMENT or PAID
         if (order.getEstado() == OrderStatus.PAGADO) {
             throw new IllegalStateException("Cannot delete an already paid order.");
         }
@@ -344,18 +272,83 @@ public class OrderService {
         return true;
     }
 
-    // The old getOrder(Long id) and delete(Long id) are implicitly removed by not
-    // being defined with UUID.
-    // The old save(PedidoDTO) is replaced by save(PedidoDTO, User).
-    // The old getOrders(User user) is replaced by getOrdersByUser(UUID userId).
+    private void aplicarSnapshotDireccion(Order order, PedidoDTO pedidoDTO, User authenticatedUser) {
+        Direccion direccionGuardada = null;
+        if (pedidoDTO.getDireccionId() != null) {
+            direccionGuardada = direccionRepo.findById(pedidoDTO.getDireccionId())
+                    .orElseThrow(() -> new NoSuchElementException("Direccion no encontrada"));
+            if (direccionGuardada.getUsuario() == null
+                    || !authenticatedUser.getId().equals(direccionGuardada.getUsuario().getId())) {
+                throw new SecurityException("Direccion no pertenece al usuario autenticado");
+            }
+        }
+
+        order.setDireccionId(pedidoDTO.getDireccionId());
+        order.setTipoDireccion(normalizeTipoDireccion(firstNonBlank(pedidoDTO.getTipoDireccion(),
+                direccionGuardada != null ? direccionGuardada.getTipoDireccion() : null)));
+        order.setDepartamento(firstNonBlank(pedidoDTO.getDepartamento(),
+                direccionGuardada != null ? direccionGuardada.getDepartamento() : null));
+        order.setProvincia(firstNonBlank(pedidoDTO.getProvincia(),
+                direccionGuardada != null ? direccionGuardada.getProvincia() : null));
+        order.setDistrito(firstNonBlank(pedidoDTO.getDistrito(),
+                direccionGuardada != null ? direccionGuardada.getDistrito() : null));
+        order.setCalle(firstNonBlank(pedidoDTO.getCalle(),
+                direccionGuardada != null ? direccionGuardada.getCalle() : null));
+        order.setReferencia(firstNonBlank(pedidoDTO.getReferencia(),
+                direccionGuardada != null ? direccionGuardada.getReferencia() : null));
+        order.setCodigoPostal(firstNonBlank(pedidoDTO.getCodigoPostal(),
+                direccionGuardada != null ? direccionGuardada.getCodigoPostal() : null));
+
+        String direccionTexto = firstNonBlank(
+                pedidoDTO.getDireccion(),
+                formatDireccion(order.getCalle(), order.getReferencia(), order.getDistrito(), order.getProvincia(),
+                        order.getDepartamento(), order.getCodigoPostal())
+        );
+        order.setDireccion(direccionTexto);
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String formatDireccion(String calle,
+                                   String referencia,
+                                   String distrito,
+                                   String provincia,
+                                   String departamento,
+                                   String codigoPostal) {
+        List<String> parts = new ArrayList<>();
+        addIfPresent(parts, calle);
+        addIfPresent(parts, referencia);
+        addIfPresent(parts, distrito);
+        addIfPresent(parts, provincia);
+        addIfPresent(parts, departamento);
+        addIfPresent(parts, codigoPostal);
+        return parts.isEmpty() ? null : String.join(", ", parts);
+    }
+
+    private void addIfPresent(List<String> parts, String value) {
+        if (value != null && !value.isBlank()) {
+            parts.add(value.trim());
+        }
+    }
+
+    private String normalizeTipoDireccion(String tipoDireccion) {
+        if (tipoDireccion == null || tipoDireccion.isBlank()) {
+            return null;
+        }
+        String normalizado = tipoDireccion.trim().toUpperCase(Locale.ROOT);
+        if (!TIPOS_DIRECCION_VALIDOS.contains(normalizado)) {
+            throw new IllegalArgumentException("Tipo de direccion invalido");
+        }
+        return normalizado;
+    }
 }
-
-
-
-
-
-
-
-
-
-

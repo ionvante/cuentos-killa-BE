@@ -111,7 +111,7 @@ public class AuthController {
         log.info("POST /api/v1/auth/login - Intento de login para: {}", request.getEmail());
         
         try {
-            // Autenticar con Spring Security
+            // Autenticar con Spring Security   
             Authentication auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     request.getEmail(), 

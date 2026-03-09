@@ -28,7 +28,6 @@ public class User {
 
     @Column(name = "documento_numero")
     private String documentoNumero;
-    private String documento; // DNI o RUC (Mantener por compatibilidad)
 
     @Enumerated(EnumType.STRING)
     private Rol role;
@@ -110,14 +109,6 @@ public class User {
 
     public void setDocumentoNumero(String documentoNumero) {
         this.documentoNumero = documentoNumero;
-    }
-
-    public String getDocumento() {
-        return documento;
-    }
-
-    public void setDocumento(String documento) {
-        this.documento = documento;
     }
 
     public Rol getRole() {

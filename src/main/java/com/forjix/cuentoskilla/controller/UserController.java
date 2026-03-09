@@ -17,10 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * API de Gestión de Usuarios
@@ -72,7 +70,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<PedidoDTO>>> getMisPedidos() {
         UserDetailsImpl user = getCurrentUser();
         logger.info("GET /api/v1/users/pedidos - Obteniendo pedidos de usuario: {}", user.getId());
-        List<PedidoDTO> pedidos = orderService.getOrders(user.getId());
+        List<PedidoDTO> pedidos = orderService.getOrdersByUser(user.getId());
         return ResponseEntity.ok(ApiResponse.success(pedidos, "Pedidos obtenidos exitosamente"));
     }
 
@@ -99,7 +97,7 @@ public class UserController {
      */
     @PutMapping("/perfil")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<User>> updatePerfil(
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updatePerfil(
             @RequestBody UserProfileDTO dto) {
         UserDetailsImpl user = getCurrentUser();
         logger.info("PUT /api/v1/users/perfil - Usuario {} actualizando su perfil", user.getId());
@@ -114,18 +112,10 @@ public class UserController {
             existingUser.setDocumentoTipo(dto.getDocumentoTipo());
             existingUser.setDocumentoNumero(dto.getDocumentoNumero());
 
-            // Compatibilidad legacy: sincronizar documento <-> documentoNumero durante la migración del FE
-            if (StringUtils.hasText(dto.getDocumentoNumero())) {
-                existingUser.setDocumento(dto.getDocumentoNumero());
-            } else if (StringUtils.hasText(dto.getDocumento())) {
-                existingUser.setDocumento(dto.getDocumento());
-                existingUser.setDocumentoNumero(dto.getDocumento());
-            }
-            
             User updated = userService.save(existingUser);
             logger.info("Perfil de usuario {} actualizado exitosamente", user.getId());
             
-            return ResponseEntity.ok(ApiResponse.success(updated, "Perfil actualizado exitosamente"));
+            return ResponseEntity.ok(ApiResponse.success(UserResponseDTO.from(updated), "Perfil actualizado exitosamente"));
         } catch (Exception e) {
             logger.error("Error al actualizar perfil de usuario {}: {}", user.getId(), e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -145,16 +135,6 @@ public class UserController {
         return userService.findAll()
                 .map(users -> ResponseEntity.ok(ApiResponse.success(users, "Usuarios obtenidos exitosamente")))
                 .orElseGet(() -> ResponseEntity.ok(ApiResponse.success(List.of(), "No hay usuarios")));
-    }
-
-    private void applyDocumentoCompatibility(User user) {
-        // Mantener ambos campos en la respuesta de perfil mientras FE migra
-        if (!StringUtils.hasText(user.getDocumentoNumero()) && StringUtils.hasText(user.getDocumento())) {
-            user.setDocumentoNumero(user.getDocumento());
-        }
-        if (!StringUtils.hasText(user.getDocumento()) && StringUtils.hasText(user.getDocumentoNumero())) {
-            user.setDocumento(user.getDocumentoNumero());
-        }
     }
 
 }

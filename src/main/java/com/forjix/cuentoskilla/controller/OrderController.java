@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * API de Gestión de Pedidos
@@ -159,9 +160,20 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> create(@RequestBody PedidoDTO pedidoDTO) {
         UserDetailsImpl user = getCurrentUser();
         try {
-            Order savedOrder = service.save(pedidoDTO, servUser.findById(pedidoDTO.getUserId()).get());
+            User authenticatedUser = servUser.findById(user.getId())
+                    .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
+            Order savedOrder = service.save(pedidoDTO, authenticatedUser);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success(Map.of("id", savedOrder.getId()), "Creado"));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("ACCESS_DENIED", "La direccion no pertenece al usuario autenticado"));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("NOT_FOUND", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("INVALID_INPUT", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("CREATION_ERROR", "Error al crear"));
@@ -174,8 +186,23 @@ public class OrderController {
             @RequestBody PedidoDTO pedidoDTO) {
         UserDetailsImpl user = getCurrentUser();
         Order savedOrder;
+        User authenticatedUser;
         try {
-            savedOrder = service.save(pedidoDTO, servUser.findById(user.getId()).get());
+            authenticatedUser = servUser.findById(user.getId())
+                    .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
+            if (pedidoDTO.getCorreoUsuario() == null || pedidoDTO.getCorreoUsuario().isBlank()) {
+                pedidoDTO.setCorreoUsuario(authenticatedUser.getEmail());
+            }
+            savedOrder = service.save(pedidoDTO, authenticatedUser);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("ACCESS_DENIED", "La direccion no pertenece al usuario autenticado"));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("NOT_FOUND", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("INVALID_INPUT", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("ORDER_CREATION_ERROR", "Error al crear"));

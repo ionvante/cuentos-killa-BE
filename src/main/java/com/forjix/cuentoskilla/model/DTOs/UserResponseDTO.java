@@ -11,7 +11,6 @@ public class UserResponseDTO {
     private String telefono;
     private String documentoTipo;
     private String documentoNumero;
-    private String documento;
     private Rol role;
 
     public static UserResponseDTO from(User user) {
@@ -23,7 +22,6 @@ public class UserResponseDTO {
         dto.setTelefono(user.getTelefono());
         dto.setDocumentoTipo(user.getDocumentoTipo());
         dto.setDocumentoNumero(user.getDocumentoNumero());
-        dto.setDocumento(user.getDocumento());
         dto.setRole(user.getRole());
         return dto;
     }
@@ -82,14 +80,6 @@ public class UserResponseDTO {
 
     public void setDocumentoNumero(String documentoNumero) {
         this.documentoNumero = documentoNumero;
-    }
-
-    public String getDocumento() {
-        return documento;
-    }
-
-    public void setDocumento(String documento) {
-        this.documento = documento;
     }
 
     public Rol getRole() {
