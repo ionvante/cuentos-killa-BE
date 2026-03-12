@@ -18,13 +18,16 @@ import com.mercadopago.exceptions.MPApiException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +59,9 @@ public class OrderController {
     private final MercadoPagoService mercadoPagoService;
     private final UserService servUser;
     private final BoletaService boletaService;
+
+    @Value("${storage.provider:local}")
+    private String storageProvider;
 
     public OrderController(OrderService service, StorageService storageService,
             MercadoPagoService mercadoPagoService, UserService servUser,
@@ -142,6 +148,7 @@ public class OrderController {
         }
     }
 
+    @Deprecated
     @PostMapping("/{id}/pay")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> initiatePayment(@PathVariable long id) {
@@ -278,21 +285,38 @@ public class OrderController {
             if (order.getEstado() == OrderStatus.PAGADO || order.getEstado() == OrderStatus.VERIFICADO) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
+
+            if (isFirebaseProvider()) {
+                PaymentVoucher voucher = voucherService.upload(orderId, file);
+                return ResponseEntity.status(HttpStatus.CREATED).body(
+                        ApiResponse.success(Map.of(
+                                "id", voucher.getId(),
+                                "filename", voucher.getFilename(),
+                                "storage", "firebase"), "Subido"));
+            }
+
             Voucher voucher = storageService.store(file, orderId, file.getOriginalFilename(), file.getContentType(),
                     request.getRemoteAddr(), dispositivo, file.getSize());
+            String fileUrl = buildLocalVoucherUrl(voucher.getNombreArchivo(), voucher.getFilePath());
             return ResponseEntity.status(HttpStatus.CREATED).body(
-                    ApiResponse.success(Map.of("id", voucher.getId(), "fileUrl", voucher.getFilePath()), "Subido"));
+                    ApiResponse.success(Map.of(
+                            "id", voucher.getId(),
+                            "fileUrl", fileUrl,
+                            "storage", "local"), "Subido"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("STORAGE_ERROR", "Error"));
         }
     }
 
+    @Deprecated
     @PostMapping("/{id}/voucherF")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Map<String, Object>>> uploadVoucherFirebase(
             @PathVariable("id") Long orderId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(name = "dispositivo", required = false, defaultValue = "Desconocido") String dispositivo,
+            HttpServletRequest request) {
         UserDetailsImpl user = getCurrentUser();
 
         // Validación de Seguridad: Solo permitir imágenes
@@ -307,32 +331,69 @@ public class OrderController {
             if (order.getEstado() == OrderStatus.PAGADO) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("ORDER_ALREADY_PAID", "Pedido ya pagado"));
             }
-            PaymentVoucher voucher = voucherService.upload(orderId, file);
+
+            if (isFirebaseProvider()) {
+                PaymentVoucher voucher = voucherService.upload(orderId, file);
+                return ResponseEntity.status(HttpStatus.CREATED).body(
+                        ApiResponse.success(Map.of(
+                                "id", voucher.getId(),
+                                "filename", voucher.getFilename(),
+                                "storage", "firebase"), "Subido"));
+            }
+
+            Voucher voucher = storageService.store(file, orderId, file.getOriginalFilename(), file.getContentType(),
+                    request.getRemoteAddr(), dispositivo, file.getSize());
+            String fileUrl = buildLocalVoucherUrl(voucher.getNombreArchivo(), voucher.getFilePath());
             return ResponseEntity.status(HttpStatus.CREATED).body(
-                    ApiResponse.success(Map.of("id", voucher.getId(), "filename", voucher.getFilename()), "Subido"));
+                    ApiResponse.success(Map.of(
+                            "id", voucher.getId(),
+                            "fileUrl", fileUrl,
+                            "storage", "local"), "Subido"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("INTERNAL_ERROR", "Error"));
         }
     }
 
-    @GetMapping("/{id}/pdf")
+    private boolean isFirebaseProvider() {
+        return storageProvider != null && storageProvider.equalsIgnoreCase("firebase");
+    }
+
+    private String buildLocalVoucherUrl(String fileName, String fallbackPath) {
+        if (StringUtils.hasText(fileName)) {
+            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+            return baseUrl + "/uploads/" + fileName;
+        }
+        return fallbackPath;
+    }
+
+    @GetMapping({ "/{id}/boleta", "/{id}/pdf" })
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<org.springframework.core.io.Resource> downloadBoletaPdf(@PathVariable long id) {
         UserDetailsImpl user = getCurrentUser();
         boolean isAdmin = user.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         try {
             BoletaService.BoletaArchivo archivo = boletaService.obtenerBoletaParaDescarga(id, user.getId(), isAdmin);
-            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(
-                    archivo.filePath().toUri());
-            if (resource.exists() || resource.isReadable()) {
+            if (archivo.pdfContent() != null) {
+                org.springframework.core.io.ByteArrayResource resource = new org.springframework.core.io.ByteArrayResource(archivo.pdfContent());
                 return ResponseEntity.ok()
                         .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"" + archivo.filePath().getFileName().toString() + "\"")
+                                "attachment; filename=\"boleta_" + archivo.numeroComprobante().replace("-", "_") + ".pdf\"")
                         .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                        .contentLength(archivo.pdfContent().length)
                         .body(resource);
             } else {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
+                org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(
+                        archivo.filePath().toUri());
+                if (resource.exists() || resource.isReadable()) {
+                    return ResponseEntity.ok()
+                            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                                    "attachment; filename=\"" + archivo.filePath().getFileName().toString() + "\"")
+                            .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                            .body(resource);
+                } else {
+                    return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
             }
         } catch (java.util.NoSuchElementException | IllegalStateException e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).build();

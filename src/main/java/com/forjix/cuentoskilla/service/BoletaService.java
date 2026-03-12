@@ -7,6 +7,11 @@ import com.forjix.cuentoskilla.model.OrderItem;
 import com.forjix.cuentoskilla.model.OrderStatus;
 import com.forjix.cuentoskilla.repository.BoletaRepository;
 import com.forjix.cuentoskilla.repository.OrderRepository;
+import com.forjix.cuentoskilla.service.storage.FirebaseStorageService;
+import com.forjix.cuentoskilla.service.storage.StorageException;
+import com.forjix.cuentoskilla.repository.MaestroRepository;
+import com.forjix.cuentoskilla.model.Maestro;
+import java.io.ByteArrayOutputStream;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -33,14 +38,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.io.ByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -60,32 +66,60 @@ public class BoletaService {
     private static final Color COLOR_PAGE_BG = new Color(250, 247, 240);
     private static final Color COLOR_QR_BANNER = new Color(0, 82, 204);
     private static final int MAX_ERROR_LENGTH = 500;
+    private static final String FIREBASE_PREFIX = "firebase://";
+    private static final String FIREBASE_BOLETAS_DIR = "boletas/";
 
     private final BoletaRepository boletaRepository;
     private final OrderRepository orderRepository;
     private final FacturacionConfigService facturacionConfigService;
+    private final FirebaseStorageService firebaseStorageService;
+    private final MaestroRepository maestroRepository;
 
     @Value("${boleta.upload-dir:uploads/boletas}")
     private String boletaUploadDir;
 
+    @Value("${storage.provider:local}")
+    private String storageProvider;
+
     private Path boletaRoot;
 
     public BoletaService(BoletaRepository boletaRepository,
-                         OrderRepository orderRepository,
-                         FacturacionConfigService facturacionConfigService) {
+            OrderRepository orderRepository,
+            FacturacionConfigService facturacionConfigService) {
+        this(boletaRepository, orderRepository, facturacionConfigService, null, null);
+    }
+
+    @Autowired
+    public BoletaService(BoletaRepository boletaRepository,
+            OrderRepository orderRepository,
+            FacturacionConfigService facturacionConfigService,
+            FirebaseStorageService firebaseStorageService,
+            MaestroRepository maestroRepository) {
         this.boletaRepository = boletaRepository;
         this.orderRepository = orderRepository;
         this.facturacionConfigService = facturacionConfigService;
+        this.firebaseStorageService = firebaseStorageService;
+        this.maestroRepository = maestroRepository;
     }
 
     @PostConstruct
     public void init() {
+        if (isFirebaseProvider()) {
+            return;
+        }
         try {
             boletaRoot = Paths.get(boletaUploadDir).toAbsolutePath().normalize();
             Files.createDirectories(boletaRoot);
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo inicializar el directorio de boletas", e);
         }
+    }
+
+    private boolean isGeneracionAlVueloEnabled() {
+        if (maestroRepository == null) return false;
+        return maestroRepository.findByCodigo("BOLETA_AL_VUELO")
+                .map(m -> m.getEstado() != null && m.getEstado() && "true".equalsIgnoreCase(m.getValor()))
+                .orElse(false);
     }
 
     @Transactional
@@ -101,17 +135,18 @@ public class BoletaService {
                 boleta.getNumeroComprobante(),
                 boleta.getEstadoGeneracion().name(),
                 boleta.getIntentos(),
-                boleta.getUltimoError()
-        );
+                boleta.getUltimoError());
     }
 
     private Boleta generarBoleta(Long orderId, boolean forzarRegeneracion) {
         Optional<Boleta> existente = boletaRepository.findByOrder_Id(orderId);
+        boolean alVuelo = isGeneracionAlVueloEnabled();
+
         if (existente.isPresent()) {
             Boleta boleta = existente.get();
             if (!forzarRegeneracion
                     && boleta.getEstadoGeneracion() == BoletaGeneracionEstado.GENERADA
-                    && hasReadableFile(boleta.getFilePath())) {
+                    && (alVuelo || hasReadableFile(boleta.getFilePath()))) {
                 return boleta;
             }
 
@@ -159,12 +194,30 @@ public class BoletaService {
                     return new IllegalStateException("BOLETA_NOT_READY");
                 });
 
-        if (boleta.getEstadoGeneracion() != BoletaGeneracionEstado.GENERADA || !hasReadableFile(boleta.getFilePath())) {
+        boolean alVuelo = isGeneracionAlVueloEnabled();
+
+        if (boleta.getEstadoGeneracion() != BoletaGeneracionEstado.GENERADA || (!alVuelo && !hasReadableFile(boleta.getFilePath()))) {
             throw new IllegalStateException("BOLETA_NOT_READY");
         }
 
-        Path filePath = Paths.get(boleta.getFilePath()).normalize().toAbsolutePath();
-        return new BoletaArchivo(filePath, boleta.getNumeroComprobante());
+        if (alVuelo) {
+            byte[] pdfBytes = generarPdfEnMemoria(order, boleta.getNumeroComprobante());
+            return new BoletaArchivo(null, pdfBytes, boleta.getNumeroComprobante());
+        }
+
+        String storedPath = boleta.getFilePath();
+        if (isFirebaseStoragePath(storedPath)) {
+            try {
+                ensureFirebaseConfigured();
+                byte[] fileBytes = firebaseStorageService.download(stripFirebasePrefix(storedPath));
+                return new BoletaArchivo(null, fileBytes, boleta.getNumeroComprobante());
+            } catch (Exception e) {
+                throw new IllegalStateException("BOLETA_NOT_READY", e);
+            }
+        }
+
+        Path filePath = Paths.get(storedPath).normalize().toAbsolutePath();
+        return new BoletaArchivo(filePath, null, boleta.getNumeroComprobante());
     }
 
     private Boleta crearRegistroBoletaPendiente(Order order) {
@@ -191,15 +244,19 @@ public class BoletaService {
     }
 
     private void procesarGeneracion(Boleta boleta, Order order) {
-        String filename = "boleta_" + boleta.getNumeroComprobante().replace("-", "_") + ".pdf";
-        Path destination = boletaRoot.resolve(filename).normalize().toAbsolutePath();
-
         Integer actualIntentos = boleta.getIntentos() == null ? 0 : boleta.getIntentos();
         boleta.setIntentos(actualIntentos + 1);
 
         try {
             generarPdf(destination, order, boleta.getNumeroComprobante());
-            boleta.setFilePath(destination.toString());
+            if (isFirebaseProvider()) {
+                ensureFirebaseConfigured();
+                String firebasePath = FIREBASE_BOLETAS_DIR + filename;
+                firebaseStorageService.upload(destination, firebasePath, "application/pdf");
+                boleta.setFilePath(FIREBASE_PREFIX + firebasePath);
+            } else {
+                boleta.setFilePath(destination.toString());
+            }
             boleta.setEstadoGeneracion(BoletaGeneracionEstado.GENERADA);
             boleta.setUltimoError(null);
             boletaRepository.save(boleta);
@@ -209,6 +266,55 @@ public class BoletaService {
             boletaRepository.save(boleta);
             logger.error("Error generando PDF de boleta. orderId={}, numeroComprobante={}, intento={}",
                     order.getId(), boleta.getNumeroComprobante(), boleta.getIntentos(), e);
+        } finally {
+            if (isFirebaseProvider()) {
+                try {
+                    Files.deleteIfExists(destination);
+                } catch (IOException ex) {
+                    logger.warn("No se pudo eliminar boleta temporal {}", destination, ex);
+                }
+            }
+        }
+    }
+
+    private byte[] generarPdfEnMemoria(Order order, String numeroComprobante) {
+        Document document = new Document(PageSize.A4, 36f, 36f, 28f, 28f);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter writer = PdfWriter.getInstance(document, outputStream);
+            document.open();
+            applyPageBackground(writer, document);
+
+            String razonSocial = facturacionConfigService.obtenerValorObligatorio("EMPRESA_RAZON_SOCIAL");
+            String ruc = facturacionConfigService.obtenerValorObligatorio("EMPRESA_RUC");
+            String direccion = facturacionConfigService.obtenerValorObligatorio("EMPRESA_DIRECCION_FISCAL");
+
+            String clienteNombre = order.getUser() != null ? order.getUser().getNombre() : null;
+            String clienteCorreo = order.getUser() != null ? order.getUser().getEmail() : null;
+            String clienteDocumento = order.getUser() != null ? order.getUser().getDocumentoNumero() : null;
+            String clienteDireccion = resolverDireccionCliente(order);
+            LocalDateTime fechaEmision = order.getCreatedAt() != null ? order.getCreatedAt() : LocalDateTime.now();
+            BigDecimal total = order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO;
+
+            agregarEncabezado(document, razonSocial, numeroComprobante, fechaEmision);
+            agregarBloqueDatos(document, razonSocial, ruc, direccion, clienteNombre, clienteCorreo, clienteDocumento,
+                    clienteDireccion);
+            agregarTablaDetalle(document, order.getItems());
+            agregarResumen(document, total);
+            agregarPie(document);
+            document.close();
+            
+            return outputStream.toByteArray();
+        } catch (DocumentException | RuntimeException e) {
+            if (document.isOpen()) {
+                try {
+                    document.close();
+                } catch (RuntimeException closeException) {
+                    e.addSuppressed(closeException);
+                }
+            }
+            throw new IllegalStateException("No se pudo generar el PDF de boleta", e);
         }
     }
 
@@ -262,11 +368,38 @@ public class BoletaService {
         if (path == null || path.isBlank()) {
             return false;
         }
+        if (isFirebaseStoragePath(path)) {
+            try {
+                ensureFirebaseConfigured();
+                return firebaseStorageService.exists(stripFirebasePrefix(path));
+            } catch (Exception ex) {
+                logger.warn("No se pudo verificar boleta en Firebase: {}", ex.getMessage());
+                return false;
+            }
+        }
         try {
             Path filePath = Paths.get(path).normalize().toAbsolutePath();
             return Files.exists(filePath) && Files.isReadable(filePath);
         } catch (RuntimeException ex) {
             return false;
+        }
+    }
+
+    private boolean isFirebaseProvider() {
+        return storageProvider != null && storageProvider.equalsIgnoreCase("firebase");
+    }
+
+    private boolean isFirebaseStoragePath(String path) {
+        return path != null && path.startsWith(FIREBASE_PREFIX);
+    }
+
+    private String stripFirebasePrefix(String path) {
+        return path.substring(FIREBASE_PREFIX.length());
+    }
+
+    private void ensureFirebaseConfigured() {
+        if (firebaseStorageService == null) {
+            throw new StorageException("FIREBASE_NOT_CONFIGURED");
         }
     }
 
@@ -303,15 +436,15 @@ public class BoletaService {
     }
 
     private void agregarEncabezado(Document document,
-                                   String razonSocial,
-                                   String numeroComprobante,
-                                   LocalDateTime fechaEmision) throws DocumentException {
+            String razonSocial,
+            String numeroComprobante,
+            LocalDateTime fechaEmision) throws DocumentException {
         Font brandFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 19, COLOR_PRIMARY);
         Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 27, COLOR_PRIMARY);
         Font numberFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, COLOR_PRIMARY);
         Font dateFont = FontFactory.getFont(FontFactory.HELVETICA, 11, COLOR_PRIMARY);
 
-        PdfPTable brandRow = new PdfPTable(new float[]{100f});
+        PdfPTable brandRow = new PdfPTable(new float[] { 100f });
         brandRow.setWidthPercentage(100f);
         brandRow.setSpacingAfter(5f);
 
@@ -323,7 +456,7 @@ public class BoletaService {
         brandRow.addCell(brandCell);
         document.add(brandRow);
 
-        PdfPTable titleRow = new PdfPTable(new float[]{66f, 34f});
+        PdfPTable titleRow = new PdfPTable(new float[] { 66f, 34f });
         titleRow.setWidthPercentage(100f);
         titleRow.setSpacingAfter(8f);
 
@@ -338,7 +471,8 @@ public class BoletaService {
         Paragraph number = new Paragraph(sanitizeForPdf("Nro " + safeText(numeroComprobante)), numberFont);
         number.setAlignment(Element.ALIGN_RIGHT);
         numberCell.addElement(number);
-        Paragraph date = new Paragraph(sanitizeForPdf("Fecha emision: " + DATE_FORMATTER.format(fechaEmision)), dateFont);
+        Paragraph date = new Paragraph(sanitizeForPdf("Fecha emision: " + DATE_FORMATTER.format(fechaEmision)),
+                dateFont);
         date.setAlignment(Element.ALIGN_RIGHT);
         numberCell.addElement(date);
         titleRow.addCell(numberCell);
@@ -358,20 +492,20 @@ public class BoletaService {
     }
 
     private void agregarBloqueDatos(Document document,
-                                    String razonSocial,
-                                    String ruc,
-                                    String direccion,
-                                    String clienteNombre,
-                                    String clienteCorreo,
-                                    String clienteDocumento,
-                                    String clienteDireccion) throws DocumentException {
+            String razonSocial,
+            String ruc,
+            String direccion,
+            String clienteNombre,
+            String clienteCorreo,
+            String clienteDocumento,
+            String clienteDireccion) throws DocumentException {
         Font sectionTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, COLOR_PRIMARY);
         Paragraph section = new Paragraph(sanitizeForPdf("DATOS DEL EMISOR Y CLIENTE"), sectionTitle);
         section.setSpacingBefore(3f);
         section.setSpacingAfter(7f);
         document.add(section);
 
-        PdfPTable container = new PdfPTable(new float[]{1f, 1f});
+        PdfPTable container = new PdfPTable(new float[] { 1f, 1f });
         container.setWidthPercentage(100f);
         container.setSpacingAfter(14f);
 
@@ -395,7 +529,7 @@ public class BoletaService {
         Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, COLOR_PRIMARY);
         Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 12, COLOR_PRIMARY);
 
-        PdfPTable table = new PdfPTable(new float[]{58f, 13f, 14f, 15f});
+        PdfPTable table = new PdfPTable(new float[] { 58f, 13f, 14f, 15f });
         table.setWidthPercentage(100f);
         table.setSpacingAfter(12f);
 
@@ -431,7 +565,7 @@ public class BoletaService {
         Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 13, COLOR_PRIMARY);
         Font valueBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, COLOR_PRIMARY);
 
-        PdfPTable resumen = new PdfPTable(new float[]{74f, 26f});
+        PdfPTable resumen = new PdfPTable(new float[] { 74f, 26f });
         resumen.setWidthPercentage(100f);
         resumen.addCell(createSummaryCell("Total Exonerado IGV (Ley 31053):", labelFont, Element.ALIGN_RIGHT));
         resumen.addCell(createSummaryCell("S/ " + money(total), valueBold, Element.ALIGN_RIGHT));
@@ -459,7 +593,7 @@ public class BoletaService {
         Font qrLabelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
         Font qrBodyFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, COLOR_PRIMARY);
 
-        PdfPTable footer = new PdfPTable(new float[]{84f, 16f});
+        PdfPTable footer = new PdfPTable(new float[] { 84f, 16f });
         footer.setWidthPercentage(100f);
         footer.setSpacingBefore(8f);
 
@@ -623,13 +757,13 @@ public class BoletaService {
         return throwable.getClass().getSimpleName();
     }
 
-    public record BoletaArchivo(Path filePath, String numeroComprobante) {
+    public record BoletaArchivo(Path filePath, byte[] pdfContent, String numeroComprobante) {
     }
 
     public record BoletaRetryResult(Long orderId,
-                                    String numeroComprobante,
-                                    String estadoGeneracion,
-                                    Integer intentos,
-                                    String ultimoError) {
+            String numeroComprobante,
+            String estadoGeneracion,
+            Integer intentos,
+            String ultimoError) {
     }
 }

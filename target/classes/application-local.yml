@@ -29,7 +29,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: ${SPRING_MAIL_USERNAME:cuentoskilla@gmail.com}
-    password: ${SPRING_MAIL_PASSWORD:ALCuentos162902Killa}
+    password: ${SPRING_MAIL_PASSWORD:nfug jaiv ythi jfbe}
     properties:
       mail:
         smtp:
@@ -42,6 +42,9 @@ file:
 
 boleta:
   upload-dir: ./uploads/boletas
+
+storage:
+  provider: local
 
 firebase:
   credentials: ${FIREBASE_CREDENTIALS:firebase-service-account.json}

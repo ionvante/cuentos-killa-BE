@@ -109,6 +109,21 @@ public class FileSystemStorageService implements StorageService {
             throw new StorageException("Failed to store file.", e);
         }
 
+        // Eliminar vouchers anteriores del filesystem y la base de datos
+        java.util.List<Voucher> existingVouchers = order.getVouchers();
+        if (existingVouchers != null && !existingVouchers.isEmpty()) {
+            for (Voucher oldVoucher : existingVouchers) {
+                try {
+                    Path oldFilePath = Paths.get(oldVoucher.getFilePath());
+                    Files.deleteIfExists(oldFilePath);
+                } catch (IOException e) {
+                    logger.warn("Could not delete old voucher file: " + oldVoucher.getFilePath(), e);
+                }
+                voucherRepository.delete(oldVoucher);
+            }
+            existingVouchers.clear();
+        }
+
         Voucher voucher = new Voucher();
         voucher.setOrder(order);
         voucher.setFecha(LocalDate.now());

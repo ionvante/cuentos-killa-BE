@@ -1,0 +1,342 @@
+Architecture Flow
+Sistema: Los Cuentos de Killa
+Versión: 1.0
+Fecha: 2026
+Responsable: Arquitectura de Producto
+
+1. Contexto del sistema
+
+
+
+Los Cuentos de Killa es una plataforma web de comercio electrónico enfocada en la venta de cuentos infantiles.
+El sistema permite a los usuarios:
+* descubrir cuentos
+* agregarlos al carrito
+* completar una compra
+* pagar mediante Mercado Pago o voucher
+* hacer seguimiento del pedido
+* descargar comprobantes
+Además incluye un panel administrativo para operar el negocio.
+
+Objetivos del sistema
+1. Permitir una experiencia de compra simple y confiable.
+2. Facilitar la gestión operativa de pedidos y pagos.
+3. Integrar medios de pago digitales.
+4. Permitir trazabilidad completa del pedido.
+
+Arquitectura general
+El sistema se compone de cuatro capas principales:
+
+
+
+Cliente Web
+     ?
+     ?
+Frontend Angular
+     ?
+     ?
+Backend API Spring Boot
+     ?
+     ??? Base de datos PostgreSQL
+     ??? Storage de vouchers
+     ??? Integración Mercado Pago
+     ??? Generación de boletas PDF
+El backend expone APIs que son consumidas por el frontend para operar el negocio.
+
+2. Actores
+El sistema contempla cuatro actores principales.
+2.1 Visitante
+Usuario no autenticado.
+Puede:
+* ver catálogo de cuentos
+* navegar por categorías
+* ver detalle de cuentos
+No puede:
+* comprar
+* ver pedidos
+* gestionar perfil
+
+2.2 Cliente autenticado
+Usuario registrado.
+Puede:
+* iniciar sesión
+* gestionar perfil
+* gestionar direcciones
+* agregar productos al carrito
+* crear pedidos
+* realizar pagos
+* subir comprobantes
+* consultar estado de pedidos
+* descargar boletas
+
+2.3 Administrador
+Usuario con permisos administrativos.
+Puede:
+* ver todos los pedidos
+* validar pagos
+* cambiar estados de pedidos
+* gestionar catálogo
+* gestionar usuarios
+* administrar configuraciones
+
+2.4 Sistemas externos
+Incluyen integraciones necesarias para operar el negocio.
+Ejemplos:
+* Mercado Pago
+* Webhook de pagos
+* almacenamiento de archivos
+* generación de boletas
+
+3. Componentes del sistema
+3.1 Frontend
+Aplicación web desarrollada en Angular.
+Principales módulos:
+* Home
+* Catálogo
+* Detalle de cuento
+* Carrito
+* Login / Registro
+* Checkout
+* Pago
+* Mis pedidos
+* Detalle de pedido
+* Panel administrativo
+Responsabilidades:
+* experiencia de usuario
+* validaciones de formularios
+* comunicación con APIs
+* manejo de navegación
+
+3.2 Backend
+API REST desarrollada en Spring Boot.
+Controladores principales:
+* AuthController
+* UserController
+* DireccionController
+* CartController
+* OrderController
+* PaymentVoucherController
+* BoletaController
+* CuentoController
+* MaestroController
+* ConfigController
+* StatsController
+Responsabilidades:
+* reglas de negocio
+* gestión de pedidos
+* validación de pagos
+* persistencia de datos
+* seguridad y permisos
+
+3.3 Base de datos
+Motor utilizado:
+PostgreSQL.
+Principales entidades:
+* usuarios
+* direcciones
+* cuentos
+* pedidos
+* estados de pedido
+* vouchers
+* boletas
+* maestros
+* configuraciones
+
+3.4 Integraciones externas
+Mercado Pago
+Responsable de procesar pagos digitales.
+Flujo:
+Pedido
+ ? creación preferencia
+ ? redirección a MP
+ ? pago usuario
+ ? webhook
+ ? actualización pedido
+
+Storage de vouchers
+Almacena comprobantes de pago enviados por los usuarios.
+Archivos permitidos:
+* JPG
+* PNG
+* PDF
+
+Generador de boletas
+Servicio encargado de generar el PDF del comprobante de venta.
+
+4. Flujos por dominio
+A continuación se describen los flujos principales del sistema.
+
+4.1 Descubrimiento de catálogo
+Flujo:
+Usuario
+   ?
+Home
+   ?
+Catálogo
+   ?
+Detalle del cuento
+Interacción con backend:
+GET /cuentos
+GET /cuentos/{id}
+Objetivo:
+Permitir descubrir cuentos antes de iniciar sesión.
+
+4.2 Carrito
+Flujo:
+Detalle del cuento
+   ?
+Agregar al carrito
+   ?
+Mini cart
+   ?
+Carrito
+El carrito conserva la intención de compra.
+
+4.3 Autenticación
+Flujo:
+Carrito
+   ?
+Checkout
+   ?
+Login / Registro
+   ?
+Retorno a checkout
+Objetivo:
+Evitar pérdida de contexto al autenticarse.
+
+4.4 Checkout
+Flujo de compra:
+Carrito
+   ?
+Checkout paso 1
+Datos personales
+   ?
+Checkout paso 2
+Dirección
+   ?
+Checkout paso 3
+Entrega
+   ?
+Crear pedido
+Interacciones principales:
+GET perfil usuario
+GET direcciones
+GET ubigeo
+POST crear pedido
+Resultado:
+Pedido creado con estado inicial.
+
+4.5 Pago
+El sistema soporta dos tipos de pago.
+
+Pago con Mercado Pago
+Flujo:
+Pedido creado
+   ?
+Crear preferencia de pago
+   ?
+Redirección a Mercado Pago
+   ?
+Usuario paga
+   ?
+Webhook notifica
+   ?
+Pedido actualizado
+
+Pago con voucher
+Flujo:
+Pedido pendiente
+   ?
+Subir voucher
+   ?
+Estado PAGO_ENVIADO
+   ?
+Admin revisa
+   ?
+Admin acepta o rechaza
+
+4.6 Postcompra
+Flujo cliente:
+Mis pedidos
+   ?
+Detalle pedido
+   ?
+Ver estado
+   ?
+Descargar boleta
+
+Flujo admin:
+Panel pedidos
+   ?
+Revisar pedido
+   ?
+Validar pago
+   ?
+Cambiar estado
+
+5. Estados del pedido
+El pedido es la entidad central del negocio.
+Estados recomendados:
+PAGO_PENDIENTE
+PAGO_ENVIADO
+PAGO_VERIFICADO
+PAGO_RECHAZADO
+EMPAQUETADO
+ENVIADO
+ENTREGADO
+CANCELADO
+
+Transiciones
+Creación de pedido
+PAGO_PENDIENTE
+
+Pago por voucher
+PAGO_PENDIENTE
+ ? PAGO_ENVIADO
+ ? PAGO_VERIFICADO
+
+Pago rechazado
+PAGO_ENVIADO
+ ? PAGO_RECHAZADO
+
+Logística
+PAGO_VERIFICADO
+ ? EMPAQUETADO
+ ? ENVIADO
+ ? ENTREGADO
+
+6. Riesgos y decisiones
+Este apartado documenta problemas detectados y decisiones recomendadas.
+
+Riesgo 1
+Flujo de pago demasiado complejo.
+Existen múltiples endpoints para un mismo proceso.
+Decisión recomendada:
+Simplificar flujo de pago.
+
+Riesgo 2
+Inconsistencia en endpoints de pedidos.
+Se utilizan rutas diferentes para el mismo dominio.
+Decisión recomendada:
+Unificar endpoints bajo un mismo namespace.
+
+Riesgo 3
+Multiplicidad de endpoints para vouchers.
+Decisión recomendada:
+Consolidar gestión de vouchers en un solo flujo.
+
+Riesgo 4
+Estados de pedido inconsistentes entre frontend y backend.
+Decisión recomendada:
+Definir un contrato único de estados.
+
+Riesgo 5
+Webhook de pagos con configuración de seguridad potencialmente incorrecta.
+Decisión recomendada:
+Revisar autenticación del webhook.
+
+Riesgo 6
+Dependencia fuerte de configuraciones externas.
+Decisión recomendada:
+Implementar manejo de errores y fallback.
+

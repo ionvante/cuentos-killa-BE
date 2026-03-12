@@ -43,6 +43,9 @@ firebase:
   # Las credenciales se leen desde FIREBASE_CREDENTIALS_JSON (variable inline)
   # o desde el archivo indicado en firebase.credentials (desarrollo local)
 
+storage:
+  provider: firebase
+
 mercadopago:
   access-token: ${MERCADOPAGO_ACCESS_TOKEN}
   back-urls:

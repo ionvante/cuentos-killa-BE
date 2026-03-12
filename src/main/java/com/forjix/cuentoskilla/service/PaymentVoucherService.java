@@ -51,6 +51,17 @@ public class PaymentVoucherService {
         String path = "vouchers/" + orderId + "/" + filename;
         storageService.upload(file, path);
 
+        Optional<PaymentVoucher> existingOpt = voucherRepository.findByOrder_Id(orderId);
+        if (existingOpt.isPresent()) {
+            PaymentVoucher oldVoucher = existingOpt.get();
+            try {
+                storageService.delete(oldVoucher.getFirebasePath());
+            } catch (Exception e) {
+                // Ignore delete errors to still allow saving the new one.
+            }
+            voucherRepository.delete(oldVoucher);
+        }
+
         PaymentVoucher voucher = new PaymentVoucher();
         voucher.setOrder(order);
         voucher.setFilename(filename);

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -58,8 +59,8 @@ public class CuentoController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<Cuento>>> getAll() {
-        logger.info("GET /api/v1/cuentos - Listando todos los cuentos");
-        List<Cuento> cuentos = cuentoRepository.findAll();
+        logger.info("GET /api/v1/cuentos - Listando cuentos habilitados");
+        List<Cuento> cuentos = cuentoRepository.findByHabilitadoTrue();
         return ResponseEntity.ok(
             ApiResponse.success(cuentos, "Cuentos obtenidos exitosamente")
         );
@@ -78,6 +79,32 @@ public class CuentoController {
         Page<Cuento> cuentosPaginados = cuentoService.obtenerCuentosPaginados(PageRequest.of(page, size));
         return ResponseEntity.ok(
             ApiResponse.success(cuentosPaginados, "Cuentos paginados obtenidos exitosamente")
+        );
+    }
+
+    /**
+     * RM-01: Buscar cuentos con filtros opcionales server-side.
+     * GET /api/v1/cuentos/search?q=&categoria=&edad=&precioMin=&precioMax=&page=0&size=20&sortBy=fechaIngreso
+     * Acceso: Público
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<Cuento>>> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String edad,
+            @RequestParam(required = false) Double precioMin,
+            @RequestParam(required = false) Double precioMax,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "fechaIngreso") String sortBy) {
+        logger.info("GET /api/v1/cuentos/search - q={}, categoria={}, edad={}, precioMin={}, precioMax={}",
+                q, categoria, edad, precioMin, precioMax);
+        Sort sort = Sort.by(Sort.Direction.DESC, sortBy);
+        Page<Cuento> resultado = cuentoService.buscarCuentos(
+                q, categoria, edad, precioMin, precioMax,
+                PageRequest.of(page, size, sort));
+        return ResponseEntity.ok(
+            ApiResponse.success(resultado, "Búsqueda completada")
         );
     }
 

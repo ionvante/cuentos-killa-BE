@@ -25,7 +25,24 @@ public class CuentoService {
     }
 
     public Page<Cuento> obtenerCuentosPaginados(Pageable pageable) {
-        return repo.findAll(pageable);
+        return repo.findByHabilitadoTrue(pageable);
+    }
+
+    /**
+     * RM-01: Búsqueda server-side con filtros opcionales.
+     * Los nulls son ignorados por la query JPQL.
+     */
+    public Page<Cuento> buscarCuentos(
+            String q,
+            String categoria,
+            String edad,
+            Double precioMin,
+            Double precioMax,
+            Pageable pageable) {
+        String qClean = (q != null && !q.isBlank()) ? "%" + q.trim().toLowerCase() + "%" : null;
+        String catClean = (categoria != null && !categoria.isBlank()) ? categoria.trim() : null;
+        String edadClean = (edad != null && !edad.isBlank()) ? edad.trim() : null;
+        return repo.buscarConFiltros(qClean, catClean, edadClean, precioMin, precioMax, pageable);
     }
 
     public Optional<Cuento> findById(Long id) {

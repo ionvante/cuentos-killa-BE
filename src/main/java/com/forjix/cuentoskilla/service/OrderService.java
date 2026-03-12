@@ -102,6 +102,8 @@ public class OrderService {
             dto.setTelefono(order.getUser().getTelefono());
             dto.setUserId(order.getUser().getId());
             dto.setCorreoUsuario(order.getUser().getEmail());
+            dto.setDocumentoTipo(order.getUser().getDocumentoTipo());
+            dto.setDocumentoNumero(order.getUser().getDocumentoNumero());
         }
         dto.setDireccionId(order.getDireccionId());
         dto.setDireccion(order.getDireccion());

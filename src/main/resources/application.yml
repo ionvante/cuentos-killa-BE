@@ -15,7 +15,7 @@ spring:
         prepareThreshold: 0
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -55,10 +55,10 @@ cors:
   allow-credentials: true  
 
 file:
-  upload-dir: uploads/vouchers
+  upload-dir: ./uploads/vouchers
 
 boleta:
-  upload-dir: uploads/boletas
+  upload-dir: ./uploads/boletas
 
 upload:
   max-size: 5242880
@@ -79,7 +79,7 @@ mercadopago:
   notification-url: https://your-api-backend.com/api/webhooks/mercadopago
 
 jwt:
-  secret: ${JWT_SECRET:4d3c57bd9dd50faac21b00810e6606c2fe256ba80be9c6f32556ca053a9f5796}
+  secret: ${JWT_SECRET:local-secret}
 
 sentry:
   dsn: ${SENTRY_DSN:}
@@ -88,7 +88,7 @@ sentry:
     minimum-event-level: error
   
 frontend:
-  url: ${FRONTEND_URL:https://killacuentos.web.app}
+  url: http://localhost:4200
 
 
 

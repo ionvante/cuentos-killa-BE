@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 
 /**
  * Configuración de seguridad siguiendo OWASP Top 10 para APIs
@@ -42,6 +43,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:http://localhost:4200}")
     private String allowedOrigins;
 
+    @Value("${storage.provider:local}")
+    private String storageProvider;
+
     public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtUtil jwtUtil) {
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
@@ -58,30 +62,34 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 // 3) Reglas de autorización siguiendo principios OWASP
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
                         // Endpoints públicos - Sin autenticación
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/cuentos/**").permitAll()
-                        .requestMatchers("/api/v1/ubigeo/**").permitAll()
-                        .requestMatchers("/api/v1/maestros/**").permitAll()
-                        .requestMatchers("/api/v1/config/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        auth.requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll();
+                        auth.requestMatchers("/api/v1/cuentos/**").permitAll();
+                        auth.requestMatchers("/api/v1/ubigeo/**").permitAll();
+                        auth.requestMatchers(HttpMethod.GET, "/api/v1/maestros/**").permitAll();
+                        auth.requestMatchers("/api/v1/config/**").permitAll();
+                        auth.requestMatchers("/api/v1/webhooks/**").permitAll(); // Webhooks - Validado por HMAC
+                        auth.requestMatchers("/actuator/health").permitAll();
+
+                        // En local, los vouchers se sirven como recursos estáticos /uploads/**
+                        if ("local".equalsIgnoreCase(storageProvider)) {
+                            auth.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
+                        }
 
                         // Endpoints privados - Requieren autenticación
-                        .requestMatchers("/api/v1/users/**").authenticated()
-                        .requestMatchers("/api/v1/orders/**").authenticated()
-                        .requestMatchers("/api/v1/cart/**").authenticated()
-                        .requestMatchers("/api/v1/direcciones/**").authenticated()
+                        auth.requestMatchers("/api/v1/users/**").authenticated();
+                        auth.requestMatchers("/api/v1/orders/**").authenticated();
+                        auth.requestMatchers("/api/v1/cart/**").authenticated();
+                        auth.requestMatchers("/api/v1/direcciones/**").authenticated();
 
                         // Admin only
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/stats/**").hasRole("ADMIN")
-
-                        // Webhooks - Validar con token
-                        .requestMatchers("/api/v1/webhooks/**").authenticated()
+                        auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
+                        auth.requestMatchers("/api/v1/stats/**").hasRole("ADMIN");
 
                         // Cualquier otra solicitud requiere autenticación
-                        .anyRequest().authenticated())
+                        auth.anyRequest().authenticated();
+                })
 
                 // 4) Agregar filtros personalizados
                 .addFilterBefore(new SecurityHeadersFilter(), UsernamePasswordAuthenticationFilter.class)

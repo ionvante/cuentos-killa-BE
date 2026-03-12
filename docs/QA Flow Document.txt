@@ -1,0 +1,383 @@
+QA Flow Document
+Sistema: Los Cuentos de Killa
+Versión: 1.0
+Tipo de pruebas: E2E + Funcional + Integración
+Cobertura: Frontend + API
+
+1. Objetivo del QA Flow
+El QA Flow define cómo validar que el sistema funcione correctamente en los siguientes aspectos:
+* funcionalidad del negocio
+* consistencia de datos
+* comportamiento del usuario
+* integraciones externas
+* resiliencia ante errores
+
+
+
+
+2. Estrategia de pruebas
+El sistema se probará en varios niveles.
+2.1 Smoke testing
+Valida que el sistema básico funciona.
+Casos incluidos:
+* login
+* catálogo
+* carrito
+* checkout
+* pago
+* admin pedidos
+Si falla uno de estos puntos el sistema no está listo para QA.
+
+2.2 Pruebas funcionales
+Validan que cada funcionalidad cumple su propósito.
+Ejemplos:
+* registro de usuario
+* agregar al carrito
+* subir voucher
+* descargar boleta
+
+2.3 Pruebas de integración
+Validan interacción entre frontend y backend.
+Ejemplos:
+* checkout ? crear pedido
+* pago ? webhook
+* voucher ? almacenamiento
+
+2.4 Pruebas de regresión
+Garantizan que cambios nuevos no rompan flujos existentes.
+Flujos críticos:
+* compra
+* pago
+* pedidos
+* panel admin
+
+2.5 Pruebas de seguridad funcional
+Validan permisos del sistema.
+Ejemplos:
+* usuario normal no entra a admin
+* usuario no puede ver pedidos ajenos
+
+3. Ambientes de prueba
+Se recomienda tener al menos tres ambientes.
+Desarrollo
+Uso del equipo de desarrollo.
+Objetivo:
+* probar funcionalidades nuevas.
+
+QA / staging
+Ambiente de pruebas completo.
+Objetivo:
+* validar integraciones.
+
+Producción
+Sistema real.
+Pruebas permitidas:
+* smoke tests
+* monitoreo
+
+4. Datos de prueba
+Para ejecutar QA se requieren datasets controlados.
+
+Usuario visitante
+Sin sesión.
+Se usa para:
+* catálogo
+* navegación
+
+Usuario cliente
+Cuenta con:
+* perfil
+* direcciones
+* pedidos
+Se usa para:
+* checkout
+* pago
+* seguimiento
+
+Usuario admin
+Cuenta con permisos administrativos.
+Se usa para:
+* validación de pagos
+* gestión de pedidos
+* mantenimiento del catálogo
+
+Pedidos de prueba
+Se recomienda tener pedidos en estados:
+PAGO_PENDIENTE
+PAGO_ENVIADO
+PAGO_VERIFICADO
+PAGO_RECHAZADO
+EMPAQUETADO
+ENVIADO
+ENTREGADO
+CANCELADO
+
+5. Casos de prueba por flujo
+Los siguientes casos representan el núcleo del QA del sistema.
+
+5.1 Catálogo
+Caso T01 – Listado de cuentos
+Objetivo:
+Verificar que el catálogo carga correctamente.
+Pasos:
+1. Abrir home.
+2. Navegar a catálogo.
+3. Revisar listado.
+Resultado esperado:
+* cuentos visibles
+* imágenes cargadas
+* precios correctos
+Prioridad:
+P1
+
+Caso T02 – Detalle de cuento
+Objetivo:
+Verificar acceso al detalle.
+Pasos:
+1. Abrir catálogo.
+2. seleccionar un cuento.
+Resultado esperado:
+* se muestra descripción
+* precio correcto
+* botón agregar al carrito
+Prioridad:
+P1
+
+5.2 Carrito
+Caso T03 – Agregar producto al carrito
+Objetivo:
+Validar que un producto se agrega al carrito.
+Pasos:
+1. Abrir detalle cuento.
+2. click en agregar al carrito.
+Resultado esperado:
+* item aparece en mini cart
+* cantidad = 1
+Prioridad:
+P0
+
+Caso T04 – Modificar cantidad
+Objetivo:
+Validar modificación de cantidad.
+Pasos:
+1. abrir carrito
+2. cambiar cantidad
+Resultado esperado:
+* total recalculado
+* cantidad actualizada
+Prioridad:
+P1
+
+5.3 Autenticación
+Caso T05 – Login correcto
+Objetivo:
+Validar login exitoso.
+Pasos:
+1. abrir login
+2. ingresar credenciales válidas
+Resultado esperado:
+* acceso al sistema
+* usuario autenticado
+Prioridad:
+P0
+
+Caso T06 – Login incorrecto
+Objetivo:
+Validar manejo de error.
+Pasos:
+1. ingresar password incorrecta
+Resultado esperado:
+* mensaje de error
+Prioridad:
+P1
+
+5.4 Registro
+Caso T07 – Registro exitoso
+Objetivo:
+Crear cuenta nueva.
+Pasos:
+1. abrir registro
+2. completar formulario
+Resultado esperado:
+* usuario creado
+* redirección a login
+Prioridad:
+P1
+
+5.5 Checkout
+Caso T08 – Crear pedido
+Objetivo:
+Validar creación de pedido.
+Pasos:
+1. carrito con items
+2. ir a checkout
+3. completar datos
+4. confirmar pedido
+Resultado esperado:
+* pedido creado
+* redirección a pago
+Prioridad:
+P0
+
+Caso T09 – Validación de campos
+Objetivo:
+Evitar avanzar con datos inválidos.
+Pasos:
+1. dejar campos vacíos
+2. intentar avanzar
+Resultado esperado:
+* mensajes de validación
+Prioridad:
+P1
+
+5.6 Pago Mercado Pago
+Caso T10 – Pago aprobado
+Objetivo:
+Validar flujo completo.
+Pasos:
+1. crear pedido
+2. pagar en Mercado Pago
+3. regresar al sitio
+Resultado esperado:
+* estado actualizado
+Prioridad:
+P0
+
+Caso T11 – Pago rechazado
+Objetivo:
+Validar pago fallido.
+Pasos:
+1. simular pago rechazado
+Resultado esperado:
+* mensaje de error
+* estado pendiente
+Prioridad:
+P1
+
+5.7 Pago por voucher
+Caso T12 – Subir voucher válido
+Objetivo:
+Validar subida de comprobante.
+Pasos:
+1. abrir pedido
+2. subir archivo
+Resultado esperado:
+* archivo guardado
+* estado PAGO_ENVIADO
+Prioridad:
+P0
+
+Caso T13 – Archivo inválido
+Objetivo:
+Validar restricciones.
+Pasos:
+1. subir archivo incorrecto
+Resultado esperado:
+* error mostrado
+Prioridad:
+P1
+
+5.8 Pedidos del cliente
+Caso T14 – Listar pedidos
+Objetivo:
+Mostrar pedidos del usuario.
+Pasos:
+1. abrir "Mis pedidos"
+Resultado esperado:
+* listado visible
+Prioridad:
+P1
+
+Caso T15 – Detalle de pedido
+Objetivo:
+Ver detalle del pedido.
+Pasos:
+1. abrir pedido
+Resultado esperado:
+* productos
+* estado
+* precio total
+Prioridad:
+P1
+
+5.9 Boleta
+Caso T16 – Descargar boleta
+Objetivo:
+Validar generación de PDF.
+Pasos:
+1. abrir pedido pagado
+2. descargar boleta
+Resultado esperado:
+* descarga correcta
+Prioridad:
+P1
+
+5.10 Panel administrativo
+Caso T17 – Ver pedidos
+Objetivo:
+Admin puede ver pedidos.
+Pasos:
+1. login admin
+2. abrir panel pedidos
+Resultado esperado:
+* lista completa
+Prioridad:
+P0
+
+Caso T18 – Validar pago
+Objetivo:
+Admin valida voucher.
+Pasos:
+1. abrir pedido
+2. aceptar pago
+Resultado esperado:
+* estado actualizado
+Prioridad:
+P0
+
+6. Casos críticos de negocio
+Los siguientes flujos nunca deben fallar.
+catalogo ? carrito
+carrito ? checkout
+checkout ? pedido
+pedido ? pago
+pago ? pedido confirmado
+Estos se consideran flujos P0.
+
+7. Automatización recomendada
+Las pruebas más críticas deben automatizarse.
+Herramientas recomendadas:
+Frontend:
+* Playwright
+* Cypress
+Backend:
+* Postman
+* REST Assured
+CI/CD:
+* GitHub Actions
+
+8. Evidencias de prueba
+Cada prueba debe registrar:
+* fecha
+* ambiente
+* usuario utilizado
+* pasos realizados
+* resultado
+* captura de pantalla
+
+9. Criterios de aprobación
+Para aprobar una versión:
+P0:
+100% exitosos
+P1:
+mínimo 95% exitosos
+P2:
+pueden diferirse
+
+10. Beneficio de este documento
+Este QA Flow permite:
+* validar releases rápidamente
+* evitar regresiones
+* reducir bugs en producción
+* facilitar onboarding de QA
+

@@ -24,6 +24,8 @@ public class PedidoDTO {
     private String tipoPago;
     private Long userId;
     private String correoUsuario;
+    private String documentoTipo;
+    private String documentoNumero;
 
     public Long getId() {
         return id;
@@ -191,5 +193,21 @@ public class PedidoDTO {
 
     public void setCorreoUsuario(String correoUsuario) {
         this.correoUsuario = correoUsuario;
+    }
+
+    public String getDocumentoTipo() {
+        return documentoTipo;
+    }
+
+    public void setDocumentoTipo(String documentoTipo) {
+        this.documentoTipo = documentoTipo;
+    }
+
+    public String getDocumentoNumero() {
+        return documentoNumero;
+    }
+
+    public void setDocumentoNumero(String documentoNumero) {
+        this.documentoNumero = documentoNumero;
     }
 }

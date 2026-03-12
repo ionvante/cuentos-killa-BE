@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, Long> {
-    Optional<Voucher> findByOrder_Id(Long orderId);
+    Optional<Voucher> findFirstByOrder_IdOrderByIdDesc(Long orderId);
 }

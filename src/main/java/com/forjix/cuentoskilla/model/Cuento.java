@@ -88,6 +88,14 @@ public class Cuento {
     private double precio;
     private String imagenUrl;
     private boolean habilitado = true;
+    private String categoria;
+
+    public String getCategoria() {
+        return categoria;
+    }
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
 
     public String getImagenUrl() {
         return imagenUrl;

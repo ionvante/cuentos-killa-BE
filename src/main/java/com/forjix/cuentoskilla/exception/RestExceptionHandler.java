@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -136,6 +137,25 @@ public class RestExceptionHandler {
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public void handleClientAbort(AsyncRequestNotUsableException ex) {
         logger.debug("Client disconnected: {}", ex.getMessage());
+    }
+
+    /**
+     * Recurso no encontrado (incluye rutas sin handler que pasan por static resources).
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoResourceFound(
+            NoResourceFoundException ex,
+            WebRequest request) {
+
+        logger.warn("Resource not found: {}", ex.getResourcePath());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(
+                        "RESOURCE_NOT_FOUND",
+                        "Recurso no encontrado",
+                        null,
+                        request.getDescription(false).replace("uri=", "")));
     }
 
     /**
