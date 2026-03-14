@@ -17,6 +17,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -157,7 +158,6 @@ public class RestExceptionHandler {
                         null,
                         request.getDescription(false).replace("uri=", "")));
     }
-
     /**
      * Maneja todas las excepciones genéricas no capturadas
      * NO expone detalles internos
