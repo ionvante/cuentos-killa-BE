@@ -10,8 +10,6 @@ import com.forjix.cuentoskilla.repository.OrderRepository;
 import com.forjix.cuentoskilla.service.storage.FirebaseStorageService;
 import com.forjix.cuentoskilla.service.storage.StorageException;
 import com.forjix.cuentoskilla.repository.MaestroRepository;
-import com.forjix.cuentoskilla.model.Maestro;
-import java.io.ByteArrayOutputStream;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -38,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -246,8 +245,13 @@ public class BoletaService {
     private void procesarGeneracion(Boleta boleta, Order order) {
         Integer actualIntentos = boleta.getIntentos() == null ? 0 : boleta.getIntentos();
         boleta.setIntentos(actualIntentos + 1);
+        String filename = boleta.getNumeroComprobante() + ".pdf";
+        Path destination = null;
 
         try {
+            destination = isFirebaseProvider()
+                    ? Files.createTempFile("boleta-", ".pdf")
+                    : boletaRoot.resolve(filename).normalize().toAbsolutePath();
             generarPdf(destination, order, boleta.getNumeroComprobante());
             if (isFirebaseProvider()) {
                 ensureFirebaseConfigured();
@@ -260,14 +264,14 @@ public class BoletaService {
             boleta.setEstadoGeneracion(BoletaGeneracionEstado.GENERADA);
             boleta.setUltimoError(null);
             boletaRepository.save(boleta);
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             boleta.setEstadoGeneracion(BoletaGeneracionEstado.ERROR);
             boleta.setUltimoError(truncateError(extractErrorMessage(e)));
             boletaRepository.save(boleta);
             logger.error("Error generando PDF de boleta. orderId={}, numeroComprobante={}, intento={}",
                     order.getId(), boleta.getNumeroComprobante(), boleta.getIntentos(), e);
         } finally {
-            if (isFirebaseProvider()) {
+            if (isFirebaseProvider() && destination != null) {
                 try {
                     Files.deleteIfExists(destination);
                 } catch (IOException ex) {
@@ -306,7 +310,7 @@ public class BoletaService {
             document.close();
             
             return outputStream.toByteArray();
-        } catch (DocumentException | RuntimeException e) {
+        } catch (RuntimeException e) {
             if (document.isOpen()) {
                 try {
                     document.close();
