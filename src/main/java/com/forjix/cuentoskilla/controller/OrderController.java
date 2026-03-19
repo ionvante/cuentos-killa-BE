@@ -10,10 +10,7 @@ import com.forjix.cuentoskilla.service.UserService;
 import com.forjix.cuentoskilla.service.BoletaService;
 import com.forjix.cuentoskilla.service.MercadoPagoService;
 import com.forjix.cuentoskilla.service.PaymentVoucherService;
-import com.forjix.cuentoskilla.service.storage.StorageException;
 import com.mercadopago.resources.preference.Preference;
-import com.mercadopago.exceptions.MPException;
-import com.mercadopago.exceptions.MPApiException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
