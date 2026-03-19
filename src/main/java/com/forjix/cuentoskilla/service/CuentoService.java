@@ -2,6 +2,7 @@ package com.forjix.cuentoskilla.service;
 
 import com.forjix.cuentoskilla.model.Cuento;
 import com.forjix.cuentoskilla.repository.CuentoRepository;
+import com.forjix.cuentoskilla.repository.MaestroRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,11 +14,14 @@ import org.springframework.data.domain.Pageable;
 public class CuentoService {
     private final CuentoRepository repo;
     private final com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService;
+    private final MaestroRepository maestroRepo;
 
     public CuentoService(CuentoRepository repo,
-            com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService) {
+            com.forjix.cuentoskilla.service.storage.FirebaseStorageService firebaseStorageService,
+            MaestroRepository maestroRepo) {
         this.repo = repo;
         this.firebaseStorageService = firebaseStorageService;
+        this.maestroRepo = maestroRepo;
     }
 
     public List<Cuento> findAll() {
@@ -49,7 +53,23 @@ public class CuentoService {
         return repo.findById(id);
     }
 
+    public void validarMaestros(Cuento cuento) {
+        if (cuento.getCategoria() != null && !cuento.getCategoria().isEmpty()) {
+            boolean valid = maestroRepo.findByCodigo(cuento.getCategoria())
+                    .map(m -> "CATEGORIA_CUENTO".equals(m.getGrupo()) && Boolean.TRUE.equals(m.getEstado()))
+                    .orElse(false);
+            if (!valid) throw new IllegalArgumentException("La categoria indicada no existe o es inactiva en los Maestros.");
+        }
+        if (cuento.getEdadRecomendada() != null && !cuento.getEdadRecomendada().isEmpty()) {
+            boolean valid = maestroRepo.findByCodigo(cuento.getEdadRecomendada())
+                    .map(m -> "EDAD_RECOMENDADA".equals(m.getGrupo()) && Boolean.TRUE.equals(m.getEstado()))
+                    .orElse(false);
+            if (!valid) throw new IllegalArgumentException("La edad recomendada indicada no existe o es inactiva en los Maestros.");
+        }
+    }
+
     public Cuento save(Cuento cuento, org.springframework.web.multipart.MultipartFile file) {
+        validarMaestros(cuento);
         if (file != null && !file.isEmpty()) {
             String fileName = "cuentos/" + java.util.UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             firebaseStorageService.upload(file, fileName);
@@ -67,6 +87,7 @@ public class CuentoService {
     }
 
     public Optional<Cuento> update(Long id, Cuento cuento, org.springframework.web.multipart.MultipartFile file) {
+        validarMaestros(cuento);
         return repo.findById(id)
                 .map(existing -> {
                     cuento.setId(id);

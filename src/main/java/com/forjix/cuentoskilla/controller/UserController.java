@@ -8,6 +8,7 @@ import com.forjix.cuentoskilla.model.DTOs.UserProfileDTO;
 import com.forjix.cuentoskilla.model.DTOs.UserResponseDTO;
 import com.forjix.cuentoskilla.service.OrderService;
 import com.forjix.cuentoskilla.service.UserService;
+import com.forjix.cuentoskilla.repository.MaestroRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +44,12 @@ public class UserController {
 
     private final OrderService orderService;
     private final UserService userService;
+    private final MaestroRepository maestroRepo;
 
-    public UserController(OrderService orderService, UserService userService) {
+    public UserController(OrderService orderService, UserService userService, MaestroRepository maestroRepo) {
         this.orderService = orderService;
         this.userService = userService;
+        this.maestroRepo = maestroRepo;
     }
 
     /**
@@ -109,6 +112,17 @@ public class UserController {
             existingUser.setNombre(dto.getNombre());
             existingUser.setApellido(dto.getApellido());
             existingUser.setTelefono(dto.getTelefono());
+            
+            // HU-R1-02: Validar tipo de documento contra Maestro
+            if (dto.getDocumentoTipo() != null && !dto.getDocumentoTipo().isBlank()) {
+                boolean validDoc = maestroRepo.findByCodigo(dto.getDocumentoTipo())
+                    .map(m -> "TIPO_DOCUMENTO".equals(m.getGrupo()) && Boolean.TRUE.equals(m.getEstado()))
+                    .orElse(false);
+                if (!validDoc) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("INVALID_DOCUMENT_TYPE", "El tipo de documento proporcionado no es valido"));
+                }
+            }
             existingUser.setDocumentoTipo(dto.getDocumentoTipo());
             existingUser.setDocumentoNumero(dto.getDocumentoNumero());
 

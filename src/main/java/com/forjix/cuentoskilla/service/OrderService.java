@@ -108,6 +108,7 @@ public class OrderService {
         dto.setDireccionId(order.getDireccionId());
         dto.setDireccion(order.getDireccion());
         dto.setTipoDireccion(order.getTipoDireccion());
+        dto.setTipoEntrega(order.getTipoEntrega());
         dto.setDepartamento(order.getDepartamento());
         dto.setProvincia(order.getProvincia());
         dto.setDistrito(order.getDistrito());
@@ -288,6 +289,7 @@ public class OrderService {
         order.setDireccionId(pedidoDTO.getDireccionId());
         order.setTipoDireccion(normalizeTipoDireccion(firstNonBlank(pedidoDTO.getTipoDireccion(),
                 direccionGuardada != null ? direccionGuardada.getTipoDireccion() : null)));
+        order.setTipoEntrega(pedidoDTO.getTipoEntrega());
         order.setDepartamento(firstNonBlank(pedidoDTO.getDepartamento(),
                 direccionGuardada != null ? direccionGuardada.getDepartamento() : null));
         order.setProvincia(firstNonBlank(pedidoDTO.getProvincia(),

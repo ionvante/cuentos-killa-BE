@@ -11,6 +11,7 @@ public class PedidoDTO {
     private String direccion;
     private Long direccionId;
     private String tipoDireccion;
+    private String tipoEntrega;
     private String departamento;
     private String provincia;
     private String distrito;
@@ -89,6 +90,14 @@ public class PedidoDTO {
 
     public void setTipoDireccion(String tipoDireccion) {
         this.tipoDireccion = tipoDireccion;
+    }
+
+    public String getTipoEntrega() {
+        return tipoEntrega;
+    }
+
+    public void setTipoEntrega(String tipoEntrega) {
+        this.tipoEntrega = tipoEntrega;
     }
 
     public String getDepartamento() {

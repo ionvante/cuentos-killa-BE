@@ -9,6 +9,7 @@ import com.forjix.cuentoskilla.model.DTOs.LoginResponse;
 import com.forjix.cuentoskilla.model.DTOs.ApiResponse;
 import com.forjix.cuentoskilla.model.DTOs.UserResponseDTO;
 import com.forjix.cuentoskilla.repository.UserRepository;
+import com.forjix.cuentoskilla.repository.MaestroRepository;
 import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
@@ -47,13 +48,16 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final MaestroRepository maestroRepo;
 
     public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil, 
-                        UserRepository userRepo, PasswordEncoder passwordEncoder) {
+                        UserRepository userRepo, PasswordEncoder passwordEncoder,
+                        MaestroRepository maestroRepo) {
         this.authManager = authManager;
         this.jwtUtil = jwtUtil;
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.maestroRepo = maestroRepo;
     }
 
     /**
@@ -79,6 +83,18 @@ public class AuthController {
                 ));
         }
         
+        // HU-R1-02: Validar tipo de documento contra Maestro
+        if (user.getDocumentoTipo() != null && !user.getDocumentoTipo().isBlank()) {
+            boolean validDoc = maestroRepo.findByCodigo(user.getDocumentoTipo())
+                .map(m -> "TIPO_DOCUMENTO".equals(m.getGrupo()) && Boolean.TRUE.equals(m.getEstado()))
+                .orElse(false);
+            if (!validDoc) {
+                return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("INVALID_DOCUMENT_TYPE", "El tipo de documento proporcionado no es valido"));
+            }
+        }
+
         // Encriptar contraseña y asignar rol por defecto
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(Rol.USER);

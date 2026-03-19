@@ -57,6 +57,9 @@ public class Order {
     @Column(name = "codigo_postal")
     private String codigoPostal;
 
+    @Column(name = "tipo_entrega")
+    private String tipoEntrega;
+
     @OneToMany(mappedBy = "order", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OrderItem> items;
@@ -175,6 +178,14 @@ public class Order {
 
     public void setCodigoPostal(String codigoPostal) {
         this.codigoPostal = codigoPostal;
+    }
+
+    public String getTipoEntrega() {
+        return tipoEntrega;
+    }
+
+    public void setTipoEntrega(String tipoEntrega) {
+        this.tipoEntrega = tipoEntrega;
     }
 
     public Long getUserId() {
